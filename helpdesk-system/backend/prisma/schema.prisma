@@ -43,34 +43,34 @@ model Department {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
+  id           Int     @id @default(autoincrement())
   fullName     String
-  email        String   @unique
+  email        String  @unique
   passwordHash String
-  role         Role     @default(EMPLOYEE)
-  isActive     Boolean  @default(true)
+  role         Role    @default(EMPLOYEE)
+  isActive     Boolean @default(true)
 
   departmentId Int?
   department   Department? @relation(fields: [departmentId], references: [id])
 
-  assets            Asset[]
-  createdTickets    Ticket[] @relation("CreatedTickets")
-  assignedTickets   Ticket[] @relation("AssignedTickets")
-  comments          TicketComment[]
-  history           TicketHistory[]
+  assets          Asset[]
+  createdTickets  Ticket[]        @relation("CreatedTickets")
+  assignedTickets Ticket[]        @relation("AssignedTickets")
+  comments        TicketComment[]
+  history         TicketHistory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Asset {
-  id             Int         @id @default(autoincrement())
-  assetTag       String      @unique
-  type           String
-  brand          String?
-  model          String?
-  serialNumber   String?     @unique
-  status         AssetStatus @default(AVAILABLE)
+  id           Int         @id @default(autoincrement())
+  assetTag     String      @unique
+  type         String
+  brand        String?
+  model        String?
+  serialNumber String?     @unique
+  status       AssetStatus @default(AVAILABLE)
 
   assignedUserId Int?
   assignedUser   User? @relation(fields: [assignedUserId], references: [id])
@@ -81,7 +81,7 @@ model Asset {
   purchaseDate   DateTime?
   warrantyExpiry DateTime?
 
-  tickets   Ticket[]
+  tickets Ticket[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -125,9 +125,9 @@ model Ticket {
 }
 
 model TicketComment {
-  id         Int      @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   message    String
-  isInternal Boolean  @default(false)
+  isInternal Boolean @default(false)
 
   ticketId Int
   ticket   Ticket @relation(fields: [ticketId], references: [id])
@@ -139,7 +139,7 @@ model TicketComment {
 }
 
 model TicketHistory {
-  id       Int    @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   action   String
   oldValue String?
   newValue String?
