@@ -5,6 +5,8 @@ import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import departmentRoutes from "./routes/department.routes.js";
 import assetRoutes from "./routes/asset.routes.js";
+import categoryRoutes from "./routes/category.routes.js";
+import ticketRoutes from "./routes/ticket.routes.js";
 
 const app = express();
 
@@ -32,5 +34,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/assets", assetRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/tickets", ticketRoutes);
 
 export default app;
