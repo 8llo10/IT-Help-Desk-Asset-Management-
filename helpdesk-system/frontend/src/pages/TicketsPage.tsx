@@ -102,7 +102,11 @@ export default function TicketsPage() {
                     <tbody>
                         {tickets.map((ticket) => (
                             <tr key={ticket.id}>
-                                <td>{ticket.ticketNumber}</td>
+                                <td>
+                                    <Link to={`/tickets/${ticket.id}`}>
+                                        {ticket.ticketNumber}
+                                    </Link>
+                                </td>
 
                                 <td>{ticket.title}</td>
 
