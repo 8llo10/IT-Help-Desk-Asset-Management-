@@ -1,278 +1,365 @@
 import prisma from "../config/prisma.js";
 
 interface CreateTicketInput {
-  title: string;
-  description: string;
-  priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  categoryId: number;
-  createdById: number;
-  assetId?: number | null;
+    title: string;
+    description: string;
+    priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    categoryId: number;
+    createdById: number;
+    assetId?: number | null;
 }
 
 type TicketStatus =
-  | "OPEN"
-  | "IN_PROGRESS"
-  | "RESOLVED"
-  | "CLOSED";
+    | "OPEN"
+    | "IN_PROGRESS"
+    | "RESOLVED"
+    | "CLOSED";
 
 export const createTicket = async (data: CreateTicketInput) => {
-  const ticketCount = await prisma.ticket.count();
+    const ticketCount = await prisma.ticket.count();
 
-  const ticketNumber = `TK-${String(ticketCount + 1).padStart(5, "0")}`;
+    const ticketNumber = `TK-${String(ticketCount + 1).padStart(5, "0")}`;
 
-  return prisma.ticket.create({
-    data: {
-      ...data,
-      ticketNumber,
-    },
-    include: {
-      category: true,
-      asset: true,
-      createdBy: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+    const ticket = await prisma.ticket.create({
+        data: {
+            ...data,
+            ticketNumber,
         },
-      },
-    },
-  });
+
+        include: {
+            category: true,
+            asset: true,
+
+            createdBy: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                },
+            },
+        },
+    });
+
+    await prisma.ticketHistory.create({
+        data: {
+            ticketId: ticket.id,
+            changedBy: data.createdById,
+            action: "CREATED",
+            newValue: "OPEN",
+        },
+    });
+
+    return ticket;
 };
 
 export const getAllTickets = async () => {
-  return prisma.ticket.findMany({
-    include: {
-      category: true,
-      asset: true,
+    return prisma.ticket.findMany({
+        include: {
+            category: true,
+            asset: true,
 
-      createdBy: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+            createdBy: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                },
+            },
+
+            assignedTo: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                },
+            },
         },
-      },
 
-      assignedTo: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+        orderBy: {
+            createdAt: "desc",
         },
-      },
-    },
-
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+    });
 };
 
-export const getTicketsByEmployee = async (userId: number) => {
-  return prisma.ticket.findMany({
-    where: {
-      createdById: userId,
-    },
-
-    include: {
-      category: true,
-      asset: true,
-
-      assignedTo: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+export const getTicketsByEmployee = async (
+    userId: number
+) => {
+    return prisma.ticket.findMany({
+        where: {
+            createdById: userId,
         },
-      },
-    },
 
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+        include: {
+            category: true,
+            asset: true,
+
+            assignedTo: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                },
+            },
+        },
+
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
 };
 
-export const getTicketsByTechnician = async (userId: number) => {
-  return prisma.ticket.findMany({
-    where: {
-      assignedToId: userId,
-    },
-
-    include: {
-      category: true,
-      asset: true,
-
-      createdBy: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+export const getTicketsByTechnician = async (
+    userId: number
+) => {
+    return prisma.ticket.findMany({
+        where: {
+            assignedToId: userId,
         },
-      },
-    },
 
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+        include: {
+            category: true,
+            asset: true,
+
+            createdBy: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                },
+            },
+        },
+
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
 };
 
 export const assignTicket = async (
-  ticketId: number,
-  technicianId: number
+    ticketId: number,
+    technicianId: number,
+    changedBy: number
 ) => {
-  const ticket = await prisma.ticket.findUnique({
-    where: {
-      id: ticketId,
-    },
-  });
-
-  if (!ticket) {
-    throw new Error("TICKET_NOT_FOUND");
-  }
-
-  const technician = await prisma.user.findUnique({
-    where: {
-      id: technicianId,
-    },
-  });
-
-  if (!technician) {
-    throw new Error("TECHNICIAN_NOT_FOUND");
-  }
-
-  if (technician.role !== "TECHNICIAN") {
-    throw new Error("USER_NOT_TECHNICIAN");
-  }
-
-  if (!technician.isActive) {
-    throw new Error("TECHNICIAN_INACTIVE");
-  }
-
-  return prisma.ticket.update({
-    where: {
-      id: ticketId,
-    },
-
-    data: {
-      assignedToId: technicianId,
-    },
-
-    include: {
-      assignedTo: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
-          role: true,
+    const ticket = await prisma.ticket.findUnique({
+        where: {
+            id: ticketId,
         },
-      },
+    });
 
-      createdBy: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+    if (!ticket) {
+        throw new Error("TICKET_NOT_FOUND");
+    }
+
+    const technician = await prisma.user.findUnique({
+        where: {
+            id: technicianId,
         },
-      },
+    });
 
-      category: true,
-      asset: true,
-    },
-  });
+    if (!technician) {
+        throw new Error("TECHNICIAN_NOT_FOUND");
+    }
+
+    if (technician.role !== "TECHNICIAN") {
+        throw new Error("USER_NOT_TECHNICIAN");
+    }
+
+    if (!technician.isActive) {
+        throw new Error("TECHNICIAN_INACTIVE");
+    }
+
+    const updatedTicket = await prisma.ticket.update({
+        where: {
+            id: ticketId,
+        },
+
+        data: {
+            assignedToId: technicianId,
+        },
+
+        include: {
+            assignedTo: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                    role: true,
+                },
+            },
+
+            createdBy: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                },
+            },
+
+            category: true,
+            asset: true,
+        },
+    });
+
+    await prisma.ticketHistory.create({
+        data: {
+            ticketId,
+            changedBy,
+            action: "ASSIGNED",
+
+            oldValue: ticket.assignedToId
+                ? String(ticket.assignedToId)
+                : null,
+
+            newValue: String(technicianId),
+        },
+    });
+
+    return updatedTicket;
 };
 
-const allowedTransitions: Record<TicketStatus, TicketStatus[]> = {
-  OPEN: ["IN_PROGRESS"],
-  IN_PROGRESS: ["RESOLVED"],
-  RESOLVED: ["CLOSED"],
-  CLOSED: [],
+const allowedTransitions: Record<
+    TicketStatus,
+    TicketStatus[]
+> = {
+    OPEN: ["IN_PROGRESS"],
+    IN_PROGRESS: ["RESOLVED"],
+    RESOLVED: ["CLOSED"],
+    CLOSED: [],
 };
 
 export const changeTicketStatus = async (
-  ticketId: number,
-  newStatus: TicketStatus,
-  userId: number,
-  userRole: string
+    ticketId: number,
+    newStatus: TicketStatus,
+    userId: number,
+    userRole: string
 ) => {
-  const ticket = await prisma.ticket.findUnique({
-    where: {
-      id: ticketId,
-    },
-  });
-
-  if (!ticket) {
-    throw new Error("TICKET_NOT_FOUND");
-  }
-
-  const currentStatus = ticket.status as TicketStatus;
-
-  if (!allowedTransitions[currentStatus].includes(newStatus)) {
-    throw new Error("INVALID_STATUS_TRANSITION");
-  }
-
-  if (
-    newStatus === "IN_PROGRESS" ||
-    newStatus === "RESOLVED"
-  ) {
-    if (
-      userRole !== "ADMIN" &&
-      ticket.assignedToId !== userId
-    ) {
-      throw new Error("NOT_ASSIGNED_TECHNICIAN");
-    }
-
-    if (!ticket.assignedToId) {
-      throw new Error("TICKET_NOT_ASSIGNED");
-    }
-  }
-
-  if (newStatus === "CLOSED") {
-    if (
-      userRole !== "ADMIN" &&
-      ticket.createdById !== userId
-    ) {
-      throw new Error("NOT_TICKET_OWNER");
-    }
-  }
-
-  return prisma.ticket.update({
-    where: {
-      id: ticketId,
-    },
-
-    data: {
-      status: newStatus,
-
-      ...(newStatus === "RESOLVED" && {
-        resolvedAt: new Date(),
-      }),
-
-      ...(newStatus === "CLOSED" && {
-        closedAt: new Date(),
-      }),
-    },
-
-    include: {
-      category: true,
-      asset: true,
-
-      createdBy: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+    const ticket = await prisma.ticket.findUnique({
+        where: {
+            id: ticketId,
         },
-      },
+    });
 
-      assignedTo: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+    if (!ticket) {
+        throw new Error("TICKET_NOT_FOUND");
+    }
+
+    const currentStatus =
+        ticket.status as TicketStatus;
+
+    if (
+        !allowedTransitions[currentStatus].includes(
+            newStatus
+        )
+    ) {
+        throw new Error(
+            "INVALID_STATUS_TRANSITION"
+        );
+    }
+
+    if (
+        newStatus === "IN_PROGRESS" ||
+        newStatus === "RESOLVED"
+    ) {
+        if (!ticket.assignedToId) {
+            throw new Error(
+                "TICKET_NOT_ASSIGNED"
+            );
+        }
+
+        if (
+            userRole !== "ADMIN" &&
+            ticket.assignedToId !== userId
+        ) {
+            throw new Error(
+                "NOT_ASSIGNED_TECHNICIAN"
+            );
+        }
+    }
+
+    if (newStatus === "CLOSED") {
+        if (
+            userRole !== "ADMIN" &&
+            ticket.createdById !== userId
+        ) {
+            throw new Error(
+                "NOT_TICKET_OWNER"
+            );
+        }
+    }
+
+    const updatedTicket =
+        await prisma.ticket.update({
+            where: {
+                id: ticketId,
+            },
+
+            data: {
+                status: newStatus,
+
+                ...(newStatus === "RESOLVED" && {
+                    resolvedAt: new Date(),
+                }),
+
+                ...(newStatus === "CLOSED" && {
+                    closedAt: new Date(),
+                }),
+            },
+
+            include: {
+                category: true,
+                asset: true,
+
+                createdBy: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        email: true,
+                    },
+                },
+
+                assignedTo: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        email: true,
+                    },
+                },
+            },
+        });
+
+    await prisma.ticketHistory.create({
+        data: {
+            ticketId,
+            changedBy: userId,
+            action: "STATUS_CHANGED",
+            oldValue: currentStatus,
+            newValue: newStatus,
         },
-      },
-    },
-  });
+    });
+
+    return updatedTicket;
+};
+
+export const getTicketHistory = async (
+    ticketId: number
+) => {
+    return prisma.ticketHistory.findMany({
+        where: {
+            ticketId,
+        },
+
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    role: true,
+                },
+            },
+        },
+
+        orderBy: {
+            createdAt: "asc",
+        },
+    });
 };
