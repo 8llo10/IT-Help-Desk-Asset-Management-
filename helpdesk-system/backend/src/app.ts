@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import prisma from "./config/prisma.js";
+import authRoutes from "./routes/auth.routes.js";
 
 const app = express();
 
@@ -23,5 +24,7 @@ app.get("/api/health", async (req, res) => {
         message: "IT Help Desk API is healthy",
     });
 });
+
+app.use("/api/auth", authRoutes);
 
 export default app;
