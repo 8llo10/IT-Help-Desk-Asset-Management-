@@ -17,6 +17,10 @@ import EditAssetPage from "./pages/EditAssetPage";
 import UsersPage from "./pages/UsersPage";
 import DepartmentsPage from "./pages/DepartmentsPage";
 import CategoriesPage from "./pages/CategoriesPage";
+import ProfilePage from "./pages/ProfilePage";
+import EditProfilePage from "./pages/EditProfilePage";
+import ReportsPage from "./pages/ReportsPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -95,6 +99,26 @@ function App() {
           <Route
             path="/categories"
             element={<CategoriesPage />}
+          />
+
+          <Route
+            path="/profile"
+            element={<ProfilePage />}
+          />
+
+          <Route
+            path="/profile/edit"
+            element={<EditProfilePage />}
+          />
+
+          <Route
+            path="/reports"
+            element={<ReportsPage />}
+          />
+
+          <Route
+            path="*"
+            element={<NotFoundPage />}
           />
 
         </Route>
