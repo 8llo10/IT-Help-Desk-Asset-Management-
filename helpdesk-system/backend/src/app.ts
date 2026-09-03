@@ -7,6 +7,11 @@ import departmentRoutes from "./routes/department.routes.js";
 import assetRoutes from "./routes/asset.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import ticketRoutes from "./routes/ticket.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
+import {
+    notFound,
+    errorHandler,
+} from "./middleware/error.middleware.js";
 
 const app = express();
 
@@ -36,5 +41,9 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/assets", assetRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/tickets", ticketRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
 
 export default app;

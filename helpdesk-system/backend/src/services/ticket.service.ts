@@ -20,10 +20,24 @@ export const createTicket = async (data: CreateTicketInput) => {
 
     const ticketNumber = `TK-${String(ticketCount + 1).padStart(5, "0")}`;
 
+    const now = new Date();
+
+    const slaHours = {
+        LOW: 24,
+        MEDIUM: 8,
+        HIGH: 4,
+        CRITICAL: 2,
+    };
+
+    const slaDueAt = new Date(
+        now.getTime() + slaHours[data.priority] * 60 * 60 * 1000
+    );
+
     const ticket = await prisma.ticket.create({
         data: {
             ...data,
             ticketNumber,
+            slaDueAt,
         },
 
         include: {
