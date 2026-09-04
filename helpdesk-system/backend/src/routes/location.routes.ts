@@ -1,13 +1,11 @@
 import { Router } from "express";
 
 import {
-    createUser,
-    getUsers,
-    getUser,
-    patchUser,
-    activateUserController,
-    deactivateUserController,
-} from "../controllers/user.controller.js";
+    create,
+    getAll,
+    getOne,
+    patch,
+} from "../controllers/location.controller.js";
 
 import {
     authenticate,
@@ -20,53 +18,45 @@ import {
 const router = Router();
 
 /* =========================================================
-   ALL USER ROUTES REQUIRE AUTHENTICATION
+   ALL LOCATION ROUTES REQUIRE AUTHENTICATION
    ========================================================= */
 
 router.use(authenticate);
 
 /* =========================================================
-   USERS
+   VIEW LOCATIONS
    ========================================================= */
 
 router.get(
     "/",
-    requirePermission("USER_VIEW"),
-    getUsers
+    requirePermission("LOCATION_VIEW"),
+    getAll
 );
 
 router.get(
     "/:id",
-    requirePermission("USER_VIEW"),
-    getUser
-);
-
-router.post(
-    "/",
-    requirePermission("USER_CREATE"),
-    createUser
-);
-
-router.patch(
-    "/:id",
-    requirePermission("USER_UPDATE"),
-    patchUser
+    requirePermission("LOCATION_VIEW"),
+    getOne
 );
 
 /* =========================================================
-   USER STATUS
+   CREATE LOCATION
+   ========================================================= */
+
+router.post(
+    "/",
+    requirePermission("LOCATION_CREATE"),
+    create
+);
+
+/* =========================================================
+   UPDATE LOCATION
    ========================================================= */
 
 router.patch(
-    "/:id/activate",
-    requirePermission("USER_ACTIVATE"),
-    activateUserController
-);
-
-router.patch(
-    "/:id/deactivate",
-    requirePermission("USER_DEACTIVATE"),
-    deactivateUserController
+    "/:id",
+    requirePermission("LOCATION_UPDATE"),
+    patch
 );
 
 export default router;

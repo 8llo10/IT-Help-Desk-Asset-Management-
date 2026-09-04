@@ -1,3 +1,5 @@
+// src/routes/ticket.routes.ts
+
 import { Router } from "express";
 
 import {
@@ -13,8 +15,9 @@ import {
 } from "../middleware/auth.middleware.js";
 
 import {
-    authorize,
-} from "../middleware/role.middleware.js";
+    requirePermission,
+    requireAnyPermission,
+} from "../middleware/permission.middleware.js";
 
 import {
     create as createComment,
@@ -23,47 +26,92 @@ import {
 
 const router = Router();
 
+/* =========================================================
+   ALL TICKET ROUTES REQUIRE AUTHENTICATION
+   ========================================================= */
+
+router.use(authenticate);
+
+/* =========================================================
+   CREATE TICKET
+   ========================================================= */
+
 router.post(
     "/",
-    authenticate,
+    requirePermission("TICKET_CREATE"),
     create
 );
 
+/* =========================================================
+   VIEW TICKETS
+   ========================================================= */
+
 router.get(
     "/",
-    authenticate,
+    requireAnyPermission([
+        "TICKET_VIEW_OWN",
+        "TICKET_VIEW_ALL",
+    ]),
     getAll
 );
 
+/* =========================================================
+   ASSIGN TICKET
+   ========================================================= */
+
 router.patch(
     "/:id/assign",
-    authenticate,
-    authorize("ADMIN"),
+    requirePermission("TICKET_ASSIGN"),
     assign
 );
 
+/* =========================================================
+   UPDATE TICKET STATUS
+   ========================================================= */
+
 router.patch(
     "/:id/status",
-    authenticate,
+    requireAnyPermission([
+        "TICKET_UPDATE",
+        "TICKET_RESOLVE",
+        "TICKET_CLOSE",
+        "TICKET_REOPEN",
+    ]),
     updateStatus
 );
 
+/* =========================================================
+   TICKET CONVERSATION / COMMENTS
+   ========================================================= */
+
 router.post(
     "/:id/comments",
-    authenticate,
+    requireAnyPermission([
+        "TICKET_COMMENT",
+        "TICKET_INTERNAL_NOTE",
+    ]),
     createComment
 );
 
 router.get(
     "/:id/comments",
-    authenticate,
+    requireAnyPermission([
+        "TICKET_VIEW_OWN",
+        "TICKET_VIEW_ALL",
+    ]),
     getComments
 );
 
-// Ticket history
+/* =========================================================
+   TICKET HISTORY
+   ========================================================= */
+
 router.get(
     "/:id/history",
-    authenticate,
+    requireAnyPermission([
+        "TICKET_VIEW_OWN",
+        "TICKET_VIEW_ALL",
+    ]),
     history
 );
 

@@ -2,6 +2,10 @@
 
 import prisma from "../config/prisma.js";
 
+/* =========================================================
+   DASHBOARD STATS
+   ========================================================= */
+
 export const getDashboardStats = async () => {
     const now = new Date();
 
@@ -11,13 +15,20 @@ export const getDashboardStats = async () => {
         inProgressTickets,
         resolvedTickets,
         closedTickets,
+
         criticalTickets,
         highTickets,
+
+        slaBreachedTickets,
+
         totalAssets,
         availableAssets,
+        inUseAssets,
         maintenanceAssets,
-        totalUsers,
-        slaBreachedTickets,
+        retiredAssets,
+
+        totalActiveUsers,
+        totalInactiveUsers,
     ] = await Promise.all([
         prisma.ticket.count(),
 
@@ -57,6 +68,21 @@ export const getDashboardStats = async () => {
             },
         }),
 
+        prisma.ticket.count({
+            where: {
+                slaDueAt: {
+                    lt: now,
+                },
+
+                status: {
+                    notIn: [
+                        "RESOLVED",
+                        "CLOSED",
+                    ],
+                },
+            },
+        }),
+
         prisma.asset.count(),
 
         prisma.asset.count({
@@ -67,7 +93,19 @@ export const getDashboardStats = async () => {
 
         prisma.asset.count({
             where: {
+                status: "IN_USE",
+            },
+        }),
+
+        prisma.asset.count({
+            where: {
                 status: "MAINTENANCE",
+            },
+        }),
+
+        prisma.asset.count({
+            where: {
+                status: "RETIRED",
             },
         }),
 
@@ -77,15 +115,9 @@ export const getDashboardStats = async () => {
             },
         }),
 
-        prisma.ticket.count({
+        prisma.user.count({
             where: {
-                slaDueAt: {
-                    lt: now,
-                },
-
-                status: {
-                    not: "CLOSED",
-                },
+                isActive: false,
             },
         }),
     ]);
@@ -93,26 +125,46 @@ export const getDashboardStats = async () => {
     return {
         tickets: {
             total: totalTickets,
-            open: openTickets,
-            inProgress: inProgressTickets,
-            resolved: resolvedTickets,
-            closed: closedTickets,
-            critical: criticalTickets,
-            high: highTickets,
+
+            byStatus: {
+                open: openTickets,
+                inProgress: inProgressTickets,
+                resolved: resolvedTickets,
+                closed: closedTickets,
+            },
+
+            byPriority: {
+                critical: criticalTickets,
+                high: highTickets,
+            },
+
             slaBreached: slaBreachedTickets,
         },
 
         assets: {
             total: totalAssets,
-            available: availableAssets,
-            maintenance: maintenanceAssets,
+
+            byStatus: {
+                available: availableAssets,
+                inUse: inUseAssets,
+                maintenance: maintenanceAssets,
+                retired: retiredAssets,
+            },
         },
 
         users: {
-            totalActive: totalUsers,
+            active: totalActiveUsers,
+            inactive: totalInactiveUsers,
+            total:
+                totalActiveUsers +
+                totalInactiveUsers,
         },
     };
 };
+
+/* =========================================================
+   RECENT TICKETS
+   ========================================================= */
 
 export const getRecentTickets = async () => {
     return prisma.ticket.findMany({
@@ -125,10 +177,20 @@ export const getRecentTickets = async () => {
         include: {
             category: true,
 
+            asset: {
+                select: {
+                    id: true,
+                    assetTag: true,
+                    type: true,
+                    status: true,
+                },
+            },
+
             createdBy: {
                 select: {
                     id: true,
                     fullName: true,
+                    email: true,
                 },
             },
 
@@ -136,6 +198,7 @@ export const getRecentTickets = async () => {
                 select: {
                     id: true,
                     fullName: true,
+                    email: true,
                 },
             },
         },

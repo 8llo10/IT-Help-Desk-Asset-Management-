@@ -11,29 +11,44 @@ import {
 } from "../middleware/auth.middleware.js";
 
 import {
-    authorize,
-} from "../middleware/role.middleware.js";
+    requirePermission,
+} from "../middleware/permission.middleware.js";
 
 const router = Router();
 
+/* =========================================================
+   ALL ASSET ROUTES REQUIRE AUTHENTICATION
+   ========================================================= */
+
+router.use(authenticate);
+
+/* =========================================================
+   VIEW ASSETS
+   ========================================================= */
+
 router.get(
     "/",
-    authenticate,
-    authorize("ADMIN", "TECHNICIAN"),
+    requirePermission("ASSET_VIEW"),
     getAll
 );
 
+/* =========================================================
+   CREATE ASSET
+   ========================================================= */
+
 router.post(
     "/",
-    authenticate,
-    authorize("ADMIN"),
+    requirePermission("ASSET_CREATE"),
     create
 );
 
+/* =========================================================
+   UPDATE ASSET
+   ========================================================= */
+
 router.patch(
     "/:id",
-    authenticate,
-    authorize("ADMIN"),
+    requirePermission("ASSET_UPDATE"),
     patch
 );
 

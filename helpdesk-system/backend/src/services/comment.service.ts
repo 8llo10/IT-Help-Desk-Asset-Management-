@@ -1,5 +1,9 @@
 import prisma from "../config/prisma.js";
 
+import {
+    createNotification,
+} from "./notification.service.js";
+
 interface AddCommentInput {
     ticketId: number;
     userId: number;
@@ -13,11 +17,12 @@ const checkTicketAccess = async (
     userId: number,
     userRole: string
 ) => {
-    const ticket = await prisma.ticket.findUnique({
-        where: {
-            id: ticketId,
-        },
-    });
+    const ticket =
+        await prisma.ticket.findUnique({
+            where: {
+                id: ticketId,
+            },
+        });
 
     if (!ticket) {
         throw new Error("TICKET_NOT_FOUND");
@@ -51,38 +56,89 @@ export const addComment = async ({
     message,
     isInternal,
 }: AddCommentInput) => {
-    await checkTicketAccess(
-        ticketId,
-        userId,
-        userRole
-    );
+    const ticket =
+        await checkTicketAccess(
+            ticketId,
+            userId,
+            userRole
+        );
 
     if (
         isInternal &&
         userRole !== "ADMIN" &&
         userRole !== "TECHNICIAN"
     ) {
-        throw new Error("INTERNAL_NOTE_NOT_ALLOWED");
+        throw new Error(
+            "INTERNAL_NOTE_NOT_ALLOWED"
+        );
     }
 
-    return prisma.ticketComment.create({
-        data: {
-            ticketId,
-            userId,
-            message,
-            isInternal,
-        },
-
-        include: {
-            user: {
-                select: {
-                    id: true,
-                    fullName: true,
-                    role: true,
-                },
+    const comment =
+        await prisma.ticketComment.create({
+            data: {
+                ticketId,
+                userId,
+                message,
+                isInternal,
             },
-        },
-    });
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        role: true,
+                    },
+                },
+                attachments: true,
+            },
+        });
+
+    if (!isInternal) {
+        let recipientUserId:
+            | number
+            | null = null;
+
+        if (
+            userRole === "EMPLOYEE" &&
+            ticket.assignedToId !== null &&
+            ticket.assignedToId !== userId
+        ) {
+            recipientUserId =
+                ticket.assignedToId;
+        }
+
+        if (
+            (
+                userRole === "TECHNICIAN" ||
+                userRole === "ADMIN"
+            ) &&
+            ticket.createdById !== userId
+        ) {
+            recipientUserId =
+                ticket.createdById;
+        }
+
+        if (
+            recipientUserId !== null
+        ) {
+            await createNotification({
+                userId:
+                    recipientUserId,
+                type:
+                    "TICKET_REPLY",
+                title:
+                    "New reply on your ticket",
+                message:
+                    `A new reply was added to ticket ${ticket.ticketNumber}.`,
+                entityType:
+                    "TICKET",
+                entityId:
+                    ticket.id,
+            });
+        }
+    }
+
+    return comment;
 };
 
 export const getComments = async (
@@ -99,12 +155,10 @@ export const getComments = async (
     return prisma.ticketComment.findMany({
         where: {
             ticketId,
-
             ...(userRole === "EMPLOYEE" && {
                 isInternal: false,
             }),
         },
-
         include: {
             user: {
                 select: {
@@ -113,8 +167,8 @@ export const getComments = async (
                     role: true,
                 },
             },
+            attachments: true,
         },
-
         orderBy: {
             createdAt: "asc",
         },

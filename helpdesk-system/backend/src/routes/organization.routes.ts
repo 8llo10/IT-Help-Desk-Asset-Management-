@@ -1,46 +1,58 @@
-// src/routes/category.routes.ts
-
 import { Router } from "express";
 
 import {
-    create,
-    getAll,
-} from "../controllers/category.controller.js";
+  create,
+  getAll,
+  getOne,
+  patch,
+} from "../controllers/organization.controller.js";
 
 import {
-    authenticate,
+  authenticate,
 } from "../middleware/auth.middleware.js";
 
 import {
-    requirePermission,
+  requirePermission,
 } from "../middleware/permission.middleware.js";
 
 const router = Router();
 
 /* =========================================================
-   ALL CATEGORY ROUTES REQUIRE AUTHENTICATION
+   ALL ORGANIZATION ROUTES REQUIRE AUTHENTICATION
    ========================================================= */
 
 router.use(authenticate);
 
 /* =========================================================
-   VIEW CATEGORIES
+   VIEW ORGANIZATIONS
    ========================================================= */
 
 router.get(
-    "/",
-    requirePermission("CATEGORY_VIEW"),
-    getAll
+  "/",
+  requirePermission("ORGANIZATION_VIEW"),
+  getAll
+);
+
+router.get(
+  "/:id",
+  requirePermission("ORGANIZATION_VIEW"),
+  getOne
 );
 
 /* =========================================================
-   MANAGE CATEGORIES
+   MANAGE ORGANIZATIONS
    ========================================================= */
 
 router.post(
-    "/",
-    requirePermission("CATEGORY_MANAGE"),
-    create
+  "/",
+  requirePermission("ORGANIZATION_MANAGE"),
+  create
+);
+
+router.patch(
+  "/:id",
+  requirePermission("ORGANIZATION_MANAGE"),
+  patch
 );
 
 export default router;

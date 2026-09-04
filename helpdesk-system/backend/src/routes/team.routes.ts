@@ -1,13 +1,13 @@
+// src/routes/team.routes.ts
+
 import { Router } from "express";
 
 import {
-    createUser,
-    getUsers,
-    getUser,
-    patchUser,
-    activateUserController,
-    deactivateUserController,
-} from "../controllers/user.controller.js";
+    createTeamController,
+    getAllTeamsController,
+    getTeamByIdController,
+    updateTeamController,
+} from "../controllers/team.controller.js";
 
 import {
     authenticate,
@@ -20,53 +20,45 @@ import {
 const router = Router();
 
 /* =========================================================
-   ALL USER ROUTES REQUIRE AUTHENTICATION
+   ALL TEAM ROUTES REQUIRE AUTHENTICATION
    ========================================================= */
 
 router.use(authenticate);
 
 /* =========================================================
-   USERS
+   VIEW TEAMS
    ========================================================= */
 
 router.get(
     "/",
-    requirePermission("USER_VIEW"),
-    getUsers
+    requirePermission("TEAM_VIEW"),
+    getAllTeamsController
 );
 
 router.get(
     "/:id",
-    requirePermission("USER_VIEW"),
-    getUser
-);
-
-router.post(
-    "/",
-    requirePermission("USER_CREATE"),
-    createUser
-);
-
-router.patch(
-    "/:id",
-    requirePermission("USER_UPDATE"),
-    patchUser
+    requirePermission("TEAM_VIEW"),
+    getTeamByIdController
 );
 
 /* =========================================================
-   USER STATUS
+   CREATE TEAM
+   ========================================================= */
+
+router.post(
+    "/",
+    requirePermission("TEAM_CREATE"),
+    createTeamController
+);
+
+/* =========================================================
+   UPDATE TEAM
    ========================================================= */
 
 router.patch(
-    "/:id/activate",
-    requirePermission("USER_ACTIVATE"),
-    activateUserController
-);
-
-router.patch(
-    "/:id/deactivate",
-    requirePermission("USER_DEACTIVATE"),
-    deactivateUserController
+    "/:id",
+    requirePermission("TEAM_UPDATE"),
+    updateTeamController
 );
 
 export default router;

@@ -1,13 +1,11 @@
 import { Router } from "express";
 
 import {
-    createUser,
-    getUsers,
-    getUser,
-    patchUser,
-    activateUserController,
-    deactivateUserController,
-} from "../controllers/user.controller.js";
+    create,
+    getAll,
+    getOne,
+    patch,
+} from "../controllers/branch.controller.js";
 
 import {
     authenticate,
@@ -20,53 +18,45 @@ import {
 const router = Router();
 
 /* =========================================================
-   ALL USER ROUTES REQUIRE AUTHENTICATION
+   ALL BRANCH ROUTES REQUIRE AUTHENTICATION
    ========================================================= */
 
 router.use(authenticate);
 
 /* =========================================================
-   USERS
+   VIEW BRANCHES
    ========================================================= */
 
 router.get(
     "/",
-    requirePermission("USER_VIEW"),
-    getUsers
+    requirePermission("BRANCH_VIEW"),
+    getAll
 );
 
 router.get(
     "/:id",
-    requirePermission("USER_VIEW"),
-    getUser
-);
-
-router.post(
-    "/",
-    requirePermission("USER_CREATE"),
-    createUser
-);
-
-router.patch(
-    "/:id",
-    requirePermission("USER_UPDATE"),
-    patchUser
+    requirePermission("BRANCH_VIEW"),
+    getOne
 );
 
 /* =========================================================
-   USER STATUS
+   CREATE BRANCH
+   ========================================================= */
+
+router.post(
+    "/",
+    requirePermission("BRANCH_CREATE"),
+    create
+);
+
+/* =========================================================
+   UPDATE BRANCH
    ========================================================= */
 
 router.patch(
-    "/:id/activate",
-    requirePermission("USER_ACTIVATE"),
-    activateUserController
-);
-
-router.patch(
-    "/:id/deactivate",
-    requirePermission("USER_DEACTIVATE"),
-    deactivateUserController
+    "/:id",
+    requirePermission("BRANCH_UPDATE"),
+    patch
 );
 
 export default router;

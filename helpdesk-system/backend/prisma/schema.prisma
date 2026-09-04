@@ -7,6 +7,12 @@ datasource db {
   provider = "postgresql"
 }
 
+/**
+ * =========================================================
+ * ENUMS
+ * =========================================================
+ */
+
 enum Role {
   EMPLOYEE
   TECHNICIAN
@@ -34,34 +40,448 @@ enum TicketStatus {
   CLOSED
 }
 
-model Department {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  users     User[]
-  assets    Asset[]
-  createdAt DateTime @default(now())
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
 }
 
-model User {
-  id           Int     @id @default(autoincrement())
-  fullName     String
-  email        String  @unique
-  passwordHash String
-  role         Role    @default(EMPLOYEE)
-  isActive     Boolean @default(true)
+enum BranchStatus {
+  ACTIVE
+  INACTIVE
+}
 
-  departmentId Int?
-  department   Department? @relation(fields: [departmentId], references: [id])
+enum LocationStatus {
+  ACTIVE
+  INACTIVE
+}
 
-  assets          Asset[]
-  createdTickets  Ticket[]        @relation("CreatedTickets")
-  assignedTickets Ticket[]        @relation("AssignedTickets")
-  comments        TicketComment[]
-  history         TicketHistory[]
+enum TeamType {
+  SERVICE_DESK
+  INFRASTRUCTURE
+  APPLICATIONS
+  SECURITY
+  NETWORK
+  OTHER
+}
+
+/**
+ * =========================================================
+ * NOTIFICATION TYPES
+ * =========================================================
+ */
+
+enum NotificationType {
+  TICKET_ASSIGNED
+  TICKET_REPLY
+  TICKET_STATUS_CHANGED
+  TICKET_RESOLVED
+  TICKET_CLOSED
+  TICKET_REOPENED
+  TICKET_ESCALATED
+
+  ASSET_ASSIGNED
+  ASSET_UNASSIGNED
+  ASSET_TRANSFERRED
+
+  ROLE_CHANGED
+  ACCOUNT_ACTIVATED
+  ACCOUNT_DEACTIVATED
+
+  SYSTEM
+}
+
+/**
+ * =========================================================
+ * ORGANIZATION
+ * =========================================================
+ */
+
+model Organization {
+  id     Int                @id @default(autoincrement())
+  name   String
+  code   String             @unique
+  status OrganizationStatus @default(ACTIVE)
+
+  branches    Branch[]
+  departments Department[]
+  teams       Team[]
+  users       User[]
+
+  /**
+   * RBAC
+   */
+  systemRoles SystemRole[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+/**
+ * =========================================================
+ * BRANCH
+ * =========================================================
+ */
+
+model Branch {
+  id     Int          @id @default(autoincrement())
+  name   String
+  code   String
+  status BranchStatus @default(ACTIVE)
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  locations   Location[]
+  departments Department[]
+  teams       Team[]
+  users       User[]
+  assets      Asset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([status])
+}
+
+/**
+ * =========================================================
+ * LOCATION
+ * =========================================================
+ */
+
+model Location {
+  id     Int            @id @default(autoincrement())
+  name   String
+  code   String
+  status LocationStatus @default(ACTIVE)
+
+  building String?
+  floor    String?
+  room     String?
+
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  users  User[]
+  assets Asset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([branchId, code])
+  @@index([branchId])
+  @@index([status])
+}
+
+/**
+ * =========================================================
+ * DEPARTMENT
+ * =========================================================
+ */
+
+model Department {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  branchId Int?
+  branch   Branch? @relation(fields: [branchId], references: [id])
+
+  users  User[]
+  assets Asset[]
+  teams  Team[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([branchId])
+}
+
+/**
+ * =========================================================
+ * TEAM
+ * =========================================================
+ */
+
+model Team {
+  id   Int      @id @default(autoincrement())
+  name String
+  type TeamType @default(OTHER)
+
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  branchId Int?
+  branch   Branch? @relation(fields: [branchId], references: [id])
+
+  departmentId Int?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  users User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([branchId])
+  @@index([departmentId])
+  @@index([type])
+}
+
+/**
+ * =========================================================
+ * USER
+ * =========================================================
+ */
+
+model User {
+  id           Int    @id @default(autoincrement())
+  fullName     String
+  email        String @unique
+  passwordHash String
+
+  /**
+   * Base role:
+   * التصنيف العام للمستخدم
+   */
+  role     Role    @default(EMPLOYEE)
+  isActive Boolean @default(true)
+
+  employeeNumber String? @unique
+  jobTitle       String?
+
+  /**
+   * ORGANIZATION
+   */
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  /**
+   * BRANCH
+   */
+  branchId Int?
+  branch   Branch? @relation(fields: [branchId], references: [id])
+
+  /**
+   * LOCATION
+   */
+  locationId Int?
+  location   Location? @relation(fields: [locationId], references: [id])
+
+  /**
+   * DEPARTMENT
+   */
+  departmentId Int?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  /**
+   * TEAM
+   */
+  teamId Int?
+  team   Team? @relation(fields: [teamId], references: [id])
+
+  /**
+   * MANAGER
+   */
+  managerId Int?
+
+  manager       User?  @relation("UserManager", fields: [managerId], references: [id])
+  directReports User[] @relation("UserManager")
+
+  /**
+   * RBAC SYSTEM ROLES
+   */
+  systemRoles UserSystemRole[]
+
+  /**
+   * ASSETS
+   */
+  assets Asset[]
+
+  /**
+   * TICKETS
+   */
+  createdTickets  Ticket[] @relation("CreatedTickets")
+  assignedTickets Ticket[] @relation("AssignedTickets")
+
+  comments TicketComment[]
+  history  TicketHistory[]
+
+  /**
+   * TICKET ATTACHMENTS
+   */
+  ticketAttachments TicketAttachment[]
+
+  /**
+   * NOTIFICATIONS
+   */
+
+  notifications Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([branchId])
+  @@index([locationId])
+  @@index([departmentId])
+  @@index([teamId])
+  @@index([managerId])
+  @@index([role])
+  @@index([isActive])
+}
+
+/**
+ * =========================================================
+ * SYSTEM ROLE
+ * =========================================================
+ */
+
+/**
+ * أمثلة:
+ * USER_ADMIN
+ * SERVICE_DESK_AGENT
+ * SERVICE_DESK_MANAGER
+ * ASSET_MANAGER
+ * REPORT_VIEWER
+ * SLA_MANAGER
+ */
+
+model SystemRole {
+  id          Int     @id @default(autoincrement())
+  name        String
+  code        String
+  description String?
+
+  /**
+   * الـRole مربوط بالشركة.
+   * نخليه optional الآن عشان نقدر مستقبلاً
+   * نضيف Global/System roles لو احتجنا.
+   */
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  permissions RolePermission[]
+  users       UserSystemRole[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@index([code])
+}
+
+/**
+ * =========================================================
+ * PERMISSION
+ * =========================================================
+ */
+
+/**
+ * Permission = أكشن واحد دقيق.
+ * أمثلة:
+ * USER_VIEW
+ * USER_CREATE
+ * USER_UPDATE
+ * USER_DEACTIVATE
+ * TICKET_VIEW
+ * TICKET_ASSIGN
+ * TICKET_RESOLVE
+ * TICKET_INTERNAL_NOTE
+ * ASSET_VIEW
+ * ASSET_CREATE
+ * ASSET_ASSIGN
+ * ASSET_TRANSFER
+ * REPORT_VIEW
+ * SLA_MANAGE
+ */
+
+model Permission {
+  id          Int     @id @default(autoincrement())
+  name        String
+  code        String  @unique
+  description String?
+
+  roles RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * =========================================================
+ * ROLE ↔ PERMISSION
+ * =========================================================
+ */
+
+/**
+ * Many-to-Many
+ * ASSET_MANAGER
+ * ↓
+ * ASSET_VIEW
+ * ASSET_CREATE
+ * ASSET_UPDATE
+ * ASSET_ASSIGN
+ */
+
+model RolePermission {
+  id Int @id @default(autoincrement())
+
+  roleId Int
+  role   SystemRole @relation(fields: [roleId], references: [id])
+
+  permissionId Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+/**
+ * =========================================================
+ * USER ↔ SYSTEM ROLE
+ * =========================================================
+ */
+
+/**
+ * مستخدم واحد يقدر يكون:
+ * USER_ADMIN
+ * +
+ * REPORT_VIEWER
+ * بنفس الوقت.
+ */
+
+model UserSystemRole {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  roleId Int
+  role   SystemRole @relation(fields: [roleId], references: [id])
+
+  assignedAt DateTime @default(now())
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+/**
+ * =========================================================
+ * ASSET
+ * =========================================================
+ */
 
 model Asset {
   id           Int         @id @default(autoincrement())
@@ -78,6 +498,12 @@ model Asset {
   departmentId Int?
   department   Department? @relation(fields: [departmentId], references: [id])
 
+  branchId Int?
+  branch   Branch? @relation(fields: [branchId], references: [id])
+
+  locationId Int?
+  location   Location? @relation(fields: [locationId], references: [id])
+
   purchaseDate   DateTime?
   warrantyExpiry DateTime?
 
@@ -85,13 +511,32 @@ model Asset {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([assignedUserId])
+  @@index([departmentId])
+  @@index([branchId])
+  @@index([locationId])
+  @@index([status])
 }
 
+/**
+ * =========================================================
+ * CATEGORY
+ * =========================================================
+ */
+
 model Category {
-  id      Int      @id @default(autoincrement())
-  name    String   @unique
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
   tickets Ticket[]
 }
+
+/**
+ * =========================================================
+ * TICKET
+ * =========================================================
+ */
 
 model Ticket {
   id           Int          @id @default(autoincrement())
@@ -113,16 +558,33 @@ model Ticket {
   assetId Int?
   asset   Asset? @relation(fields: [assetId], references: [id])
 
-  slaDueAt   DateTime?
+  slaDueAt DateTime?
+
   resolvedAt DateTime?
   closedAt   DateTime?
 
-  comments TicketComment[]
-  history  TicketHistory[]
+  comments    TicketComment[]
+  history     TicketHistory[]
+  attachments TicketAttachment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([categoryId])
+  @@index([createdById])
+  @@index([assignedToId])
+  @@index([assetId])
+  @@index([slaDueAt])
+  @@index([createdAt])
 }
+
+/**
+ * =========================================================
+ * TICKET COMMENT
+ * =========================================================
+ */
 
 model TicketComment {
   id         Int     @id @default(autoincrement())
@@ -135,8 +597,50 @@ model TicketComment {
   userId Int
   user   User @relation(fields: [userId], references: [id])
 
+  attachments TicketAttachment[]
+
   createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([userId])
 }
+
+/**
+ * =========================================================
+ * TICKET ATTACHMENT
+ * =========================================================
+ */
+
+model TicketAttachment {
+  id Int @id @default(autoincrement())
+
+  fileName     String
+  originalName String
+  mimeType     String
+  fileSize     Int
+  fileUrl      String
+
+  ticketId Int
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  commentId Int?
+  comment   TicketComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  uploadedById Int
+  uploadedBy   User @relation(fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([commentId])
+  @@index([uploadedById])
+}
+
+/**
+ * =========================================================
+ * TICKET HISTORY
+ * =========================================================
+ */
 
 model TicketHistory {
   id       Int     @id @default(autoincrement())
@@ -151,4 +655,39 @@ model TicketHistory {
   user      User @relation(fields: [changedBy], references: [id])
 
   createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([changedBy])
+  @@index([createdAt])
+}
+
+/**
+ * =========================================================
+ * NOTIFICATION
+ * =========================================================
+ */
+
+model Notification {
+  id Int @id @default(autoincrement())
+
+  type NotificationType
+
+  title   String
+  message String
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  entityType String?
+  entityId   Int?
+
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([type])
+  @@index([createdAt])
 }
