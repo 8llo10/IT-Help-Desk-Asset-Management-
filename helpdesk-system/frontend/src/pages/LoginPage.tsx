@@ -10,7 +10,8 @@ import {
 import api from "../api/client";
 import useAuth from "../hooks/useAuth";
 
-import catImage from "../assets/cat-logo.png";
+import catImage from "../assets/wasl-characters.png";
+import waslLogo from "../assets/wasl-logo.png";
 
 type AuthMode =
     | "login"
@@ -20,10 +21,12 @@ interface LoginResponseUser {
     id: number;
     fullName: string;
     email: string;
+
     role:
     | "ADMIN"
     | "TECHNICIAN"
     | "EMPLOYEE";
+
     isActive: boolean;
 }
 
@@ -127,12 +130,6 @@ export default function LoginPage() {
                 );
             }
 
-            /*
-             * AuthContext now handles:
-             * - localStorage
-             * - token state
-             * - user state
-             */
             login(
                 token,
                 user
@@ -221,13 +218,8 @@ export default function LoginPage() {
         ) => {
             event.preventDefault();
 
-            setError(
-                ""
-            );
-
-            setSuccess(
-                ""
-            );
+            setError("");
+            setSuccess("");
 
             if (
                 !email.trim()
@@ -296,17 +288,9 @@ export default function LoginPage() {
             newMode
         );
 
-        setError(
-            ""
-        );
-
-        setSuccess(
-            ""
-        );
-
-        setPassword(
-            ""
-        );
+        setError("");
+        setSuccess("");
+        setPassword("");
     };
 
     /* =========================================================
@@ -316,46 +300,73 @@ export default function LoginPage() {
     return (
         <div className="auth-page">
 
+            {/* BACKGROUND DECORATIONS */}
+
+            <div className="auth-blur auth-blur-yellow" />
+            <div className="auth-blur auth-blur-pink" />
+            <div className="auth-blur auth-blur-brown" />
+
             <div className="auth-shell">
 
                 {/* ===================================================
-            LEFT SIDE
+            VISUAL SIDE
             =================================================== */}
 
                 <section className="auth-visual">
 
                     <div className="auth-visual-copy">
 
-                        <p className="auth-kicker">
+                        <span className="auth-kicker">
                             WASL IT MANAGEMENT
-                        </p>
+                        </span>
 
                         <h1>
-                            Support that actually
+                            Support that
+                            <br />
+
                             <span>
-                                {" "}
-                                connects.
+                                connects people.
                             </span>
                         </h1>
 
                         <p>
-                            Tickets, assets, users
-                            and IT operations in one
-                            clean workspace.
+                            A smarter workspace for
+                            support requests, assets
+                            and IT operations.
                         </p>
 
                     </div>
 
-                    <img
-                        src={catImage}
-                        alt="WASL mascot"
-                        className="auth-mascot"
-                    />
+                    <div className="auth-mascot-wrap">
+
+                        <div className="auth-mascot-glow" />
+
+                        <img
+                            src={catImage}
+                            alt="WASL support mascot"
+                            className="auth-mascot"
+                        />
+
+                    </div>
+
+                    <div className="auth-visual-footer">
+                        <span>
+                            SUPPORT
+                        </span>
+
+                        <span>
+                            ASSETS
+                        </span>
+
+                        <span>
+                            PEOPLE
+                        </span>
+                    </div>
 
                 </section>
 
                 {/* ===================================================
-            RIGHT SIDE
+            AUTH CARD
             =================================================== */}
 
                 <section className="auth-card">
@@ -365,7 +376,10 @@ export default function LoginPage() {
                     <div className="auth-card-brand">
 
                         <div className="auth-brand-mark">
-                            W
+                            <img
+                                src={waslLogo}
+                                alt="WASL"
+                            />
                         </div>
 
                         <div className="auth-brand-copy">
@@ -375,8 +389,8 @@ export default function LoginPage() {
                             </strong>
 
                             <span>
-                                IT Help Desk & Asset
-                                Management
+                                IT Help Desk &
+                                Asset Management
                             </span>
 
                         </div>
@@ -384,7 +398,7 @@ export default function LoginPage() {
                     </div>
 
                     {/* =================================================
-              LOGIN / REGISTER TABS
+              TABS
               ================================================= */}
 
                     <div className="auth-tabs">
@@ -420,36 +434,33 @@ export default function LoginPage() {
                                 )
                             }
                         >
-                            New User
+                            Sign Up
                         </button>
 
                     </div>
 
                     {/* =================================================
-              HEADER
+              HEADING
               ================================================= */}
 
                     <div className="auth-heading">
 
                         <p>
-                            {mode ===
-                                "login"
+                            {mode === "login"
                                 ? "WELCOME BACK"
-                                : "GET STARTED"}
+                                : "CREATE ACCOUNT"}
                         </p>
 
                         <h2>
-                            {mode ===
-                                "login"
-                                ? "Sign in to your account"
-                                : "Create your account"}
+                            {mode === "login"
+                                ? "Sign in to WASL"
+                                : "Join WASL"}
                         </h2>
 
                         <span>
-                            {mode ===
-                                "login"
-                                ? "Access your IT workspace securely."
-                                : "Join the WASL support workspace."}
+                            {mode === "login"
+                                ? "Continue to your IT workspace."
+                                : "Create your account and start using the support workspace."}
                         </span>
 
                     </div>
@@ -464,8 +475,6 @@ export default function LoginPage() {
                             handleSubmit
                         }
                     >
-
-                        {/* FULL NAME */}
 
                         {mode ===
                             "register" && (
@@ -502,45 +511,34 @@ export default function LoginPage() {
                                 </div>
                             )}
 
-                        {/* EMAIL */}
-
                         <div className="auth-field">
 
                             <label
                                 htmlFor="email"
                             >
-                                Email
+                                Email Address
                             </label>
 
                             <input
                                 id="email"
                                 type="email"
                                 placeholder="you@company.com"
-                                value={
-                                    email
-                                }
+                                value={email}
                                 autoComplete="email"
-                                disabled={
-                                    loading
-                                }
+                                disabled={loading}
                                 required
                                 onChange={(
                                     event
                                 ) => {
                                     setEmail(
-                                        event.target
-                                            .value
+                                        event.target.value
                                     );
 
-                                    setError(
-                                        ""
-                                    );
+                                    setError("");
                                 }}
                             />
 
                         </div>
-
-                        {/* PASSWORD */}
 
                         <div className="auth-field">
 
@@ -554,36 +552,26 @@ export default function LoginPage() {
                                 id="password"
                                 type="password"
                                 placeholder="Enter your password"
-                                value={
-                                    password
-                                }
+                                value={password}
                                 autoComplete={
-                                    mode ===
-                                        "login"
+                                    mode === "login"
                                         ? "current-password"
                                         : "new-password"
                                 }
-                                disabled={
-                                    loading
-                                }
+                                disabled={loading}
                                 required
                                 onChange={(
                                     event
                                 ) => {
                                     setPassword(
-                                        event.target
-                                            .value
+                                        event.target.value
                                     );
 
-                                    setError(
-                                        ""
-                                    );
+                                    setError("");
                                 }}
                             />
 
                         </div>
-
-                        {/* ERROR */}
 
                         {error && (
                             <p
@@ -594,8 +582,6 @@ export default function LoginPage() {
                             </p>
                         )}
 
-                        {/* SUCCESS */}
-
                         {success && (
                             <p
                                 className="auth-success"
@@ -605,8 +591,6 @@ export default function LoginPage() {
                             </p>
                         )}
 
-                        {/* SUBMIT */}
-
                         <button
                             type="submit"
                             className="auth-submit"
@@ -615,19 +599,15 @@ export default function LoginPage() {
                             }
                         >
                             {loading
-                                ? mode ===
-                                    "login"
+                                ? mode === "login"
                                     ? "Signing in..."
                                     : "Creating account..."
-                                : mode ===
-                                    "login"
+                                : mode === "login"
                                     ? "Sign In"
                                     : "Create Account"}
                         </button>
 
                     </form>
-
-                    {/* FOOTER */}
 
                     <p className="auth-footer">
                         Secure IT operations
@@ -637,7 +617,6 @@ export default function LoginPage() {
                 </section>
 
             </div>
-
         </div>
     );
 }

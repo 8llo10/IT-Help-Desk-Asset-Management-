@@ -10,13 +10,19 @@ import {
 
 import {
     Activity,
+    AlertCircle,
     AlertTriangle,
-    ArrowRight,
+    ArrowUpRight,
     CheckCircle2,
+    ChevronRight,
     CircleDot,
     Clock3,
+    Gauge,
     Laptop,
     Plus,
+    ServerCog,
+    ShieldCheck,
+    Sparkles,
     TicketCheck,
     Users,
     Wrench,
@@ -37,6 +43,8 @@ import {
 
 import api from "../api/client";
 import useAuth from "../hooks/useAuth";
+
+import "../styles/Dashboard.css";
 
 /* =========================================================
    TYPES
@@ -200,7 +208,7 @@ export default function DashboardPage() {
     }, []);
 
     /* =========================================================
-       TICKET STATUS CHART
+       DATA
        ========================================================= */
 
     const ticketChartData =
@@ -215,21 +223,18 @@ export default function DashboardPage() {
                     value:
                         stats.tickets.open,
                 },
-
                 {
-                    name: "Progress",
+                    name: "In Progress",
                     value:
                         stats.tickets
                             .inProgress,
                 },
-
                 {
                     name: "Resolved",
                     value:
                         stats.tickets
                             .resolved,
                 },
-
                 {
                     name: "Closed",
                     value:
@@ -238,23 +243,12 @@ export default function DashboardPage() {
             ];
         }, [stats]);
 
-    /* =========================================================
-       PRIORITY CHART
-       ========================================================= */
-
     const priorityChartData =
         useMemo(() => {
             if (!stats) {
                 return [];
             }
 
-            /*
-             * Backend currently exposes:
-             * total, high and critical.
-             *
-             * Remaining tickets are grouped
-             * under "Normal".
-             */
             const normalTickets =
                 Math.max(
                     stats.tickets.total -
@@ -269,29 +263,23 @@ export default function DashboardPage() {
                     name: "Normal",
                     value:
                         normalTickets,
-                    color: "#7266ff",
+                    color: "#E8B92B",
                 },
-
                 {
                     name: "High",
                     value:
                         stats.tickets.high,
-                    color: "#ff9f43",
+                    color: "#D98C42",
                 },
-
                 {
                     name: "Critical",
                     value:
                         stats.tickets
                             .critical,
-                    color: "#ff4d6d",
+                    color: "#C95E63",
                 },
             ];
         }, [stats]);
-
-    /* =========================================================
-       ASSET CHART
-       ========================================================= */
 
     const assetChartData =
         useMemo(() => {
@@ -299,13 +287,6 @@ export default function DashboardPage() {
                 return [];
             }
 
-            /*
-             * Backend currently exposes:
-             * total, available and maintenance.
-             *
-             * Remaining active assets are
-             * represented as "In Use".
-             */
             const inUse =
                 Math.max(
                     stats.assets.total -
@@ -322,23 +303,38 @@ export default function DashboardPage() {
                     value:
                         stats.assets
                             .available,
-                    color: "#6c63ff",
+                    color: "#819B6F",
                 },
-
                 {
                     name: "In Use",
                     value: inUse,
-                    color: "#c084fc",
+                    color: "#E2B83E",
                 },
-
                 {
                     name: "Maintenance",
                     value:
                         stats.assets
                             .maintenance,
-                    color: "#ff9f43",
+                    color: "#C98655",
                 },
             ];
+        }, [stats]);
+
+    const resolutionRate =
+        useMemo(() => {
+            if (
+                !stats ||
+                stats.tickets.total === 0
+            ) {
+                return 0;
+            }
+
+            return Math.round(
+                ((stats.tickets.resolved +
+                    stats.tickets.closed) /
+                    stats.tickets.total) *
+                100
+            );
         }, [stats]);
 
     /* =========================================================
@@ -348,13 +344,13 @@ export default function DashboardPage() {
     const getPriorityClass = (
         priority: TicketPriority
     ) => {
-        return `priority-badge priority-${priority.toLowerCase()}`;
+        return `dashboard-priority dashboard-priority-${priority.toLowerCase()}`;
     };
 
     const getStatusClass = (
         status: TicketStatus
     ) => {
-        return `status-badge status-${status
+        return `dashboard-status dashboard-status-${status
             .toLowerCase()
             .replace("_", "-")}`;
     };
@@ -373,31 +369,38 @@ export default function DashboardPage() {
     };
 
     /* =========================================================
-       LOADING
+       STATES
        ========================================================= */
 
     if (loading) {
         return (
             <div className="dashboard-state">
-                <Activity className="dashboard-loader" />
+
+                <div className="dashboard-loading-orbit">
+                    <Activity size={25} />
+                </div>
+
+                <strong>
+                    Preparing your workspace
+                </strong>
 
                 <p>
-                    Loading dashboard...
+                    Loading WASL operations...
                 </p>
+
             </div>
         );
     }
 
-    /* =========================================================
-       ERROR
-       ========================================================= */
-
     if (error) {
         return (
             <div className="dashboard-error">
-                <AlertTriangle
-                    size={22}
-                />
+
+                <div className="dashboard-error-icon">
+                    <AlertTriangle
+                        size={22}
+                    />
+                </div>
 
                 <div>
                     <strong>
@@ -408,13 +411,10 @@ export default function DashboardPage() {
                         {error}
                     </p>
                 </div>
+
             </div>
         );
     }
-
-    /* =========================================================
-       EMPTY DATA
-       ========================================================= */
 
     if (!stats) {
         return (
@@ -428,7 +428,7 @@ export default function DashboardPage() {
     }
 
     /* =========================================================
-       PERMISSIONS / UI
+       PERMISSIONS
        ========================================================= */
 
     const isAdmin =
@@ -452,15 +452,16 @@ export default function DashboardPage() {
     return (
         <div className="dashboard-page">
 
-            {/* =====================================================
-          HEADER
-          ===================================================== */}
+            {/* HERO */}
 
-            <section className="dashboard-header">
-                <div>
-                    <p className="dashboard-eyebrow">
-                        IT Operations Center
-                    </p>
+            <section className="dashboard-hero">
+
+                <div className="dashboard-hero-main">
+
+                    <div className="dashboard-live-label">
+                        <span />
+                        WASL OPERATIONS
+                    </div>
 
                     <h1>
                         Welcome back,{" "}
@@ -469,225 +470,282 @@ export default function DashboardPage() {
                         </span>
                     </h1>
 
-                    <p className="dashboard-subtitle">
-                        Here's what's happening
-                        across your IT support
-                        environment today.
+                    <p>
+                        Your IT operations,
+                        support requests and
+                        infrastructure — connected
+                        in one workspace.
                     </p>
+
+                    <div className="dashboard-hero-actions">
+
+                        {canCreateTicket && (
+                            <Link
+                                to="/tickets/new"
+                                className="dashboard-action-primary"
+                            >
+                                <Plus size={17} />
+
+                                New Ticket
+
+                                <ArrowUpRight
+                                    size={15}
+                                />
+                            </Link>
+                        )}
+
+                        <Link
+                            to="/tickets"
+                            className="dashboard-action-secondary"
+                        >
+                            View Tickets
+
+                            <ChevronRight
+                                size={16}
+                            />
+                        </Link>
+
+                    </div>
+
                 </div>
 
-                <div className="dashboard-header-actions">
+                <div className="dashboard-hero-insight">
 
-                    {canCreateTicket && (
-                        <Link
-                            to="/tickets/new"
-                            className="dashboard-primary-button"
-                        >
-                            <Plus size={18} />
+                    <div className="dashboard-insight-top">
 
-                            New Ticket
-                        </Link>
-                    )}
-
-                    {isAdmin && (
-                        <Link
-                            to="/assets/new"
-                            className="dashboard-secondary-button"
-                        >
-                            <Laptop
-                                size={18}
-                            />
-
-                            Add Asset
-                        </Link>
-                    )}
-
-                </div>
-            </section>
-
-            {/* =====================================================
-          TOP STATS
-          ===================================================== */}
-
-            <section className="stats-grid">
-
-                {/* TOTAL TICKETS */}
-
-                <article className="stat-card stat-card-primary">
-                    <div className="stat-card-top">
-                        <div className="stat-icon">
-                            <TicketCheck
-                                size={21}
-                            />
+                        <div className="dashboard-insight-icon">
+                            <Gauge size={21} />
                         </div>
 
-                        <span className="stat-label">
-                            Total Tickets
-                        </span>
-                    </div>
-
-                    <div className="stat-value">
-                        {
-                            stats.tickets
-                                .total
-                        }
-                    </div>
-
-                    <div className="stat-footer">
                         <span>
-                            {
-                                stats.tickets
-                                    .open
-                            }{" "}
-                            currently open
+                            Operations Health
                         </span>
 
-                        <ArrowRight
-                            size={15}
+                    </div>
+
+                    <div className="dashboard-health-score">
+
+                        <strong>
+                            {resolutionRate}%
+                        </strong>
+
+                        <span>
+                            resolution rate
+                        </span>
+
+                    </div>
+
+                    <div className="dashboard-health-track">
+                        <span
+                            style={{
+                                width:
+                                    `${resolutionRate}%`,
+                            }}
                         />
                     </div>
-                </article>
 
-                {/* IN PROGRESS */}
+                    <div className="dashboard-health-footer">
 
-                <article className="stat-card">
-                    <div className="stat-card-top">
-                        <div className="stat-icon">
-                            <Clock3
-                                size={21}
+                        <span>
+                            <ShieldCheck
+                                size={14}
+                            />
+                            Live system data
+                        </span>
+
+                        <span>
+                            {stats.tickets.open} open
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            {/* KPI BENTO */}
+
+            <section className="dashboard-kpi-grid">
+
+                <article className="dashboard-kpi dashboard-kpi-featured">
+
+                    <div className="dashboard-kpi-top">
+
+                        <div className="dashboard-kpi-icon">
+                            <TicketCheck
+                                size={20}
                             />
                         </div>
 
-                        <span className="stat-label">
+                        <span className="dashboard-kpi-label">
+                            Total Tickets
+                        </span>
+
+                    </div>
+
+                    <strong className="dashboard-kpi-value">
+                        {stats.tickets.total}
+                    </strong>
+
+                    <div className="dashboard-kpi-bottom">
+
+                        <span>
+                            {stats.tickets.open}
+                            {" "}
+                            open requests
+                        </span>
+
+                        <Link to="/tickets">
+                            View
+                            <ArrowUpRight
+                                size={13}
+                            />
+                        </Link>
+
+                    </div>
+
+                </article>
+
+                <article className="dashboard-kpi">
+
+                    <div className="dashboard-kpi-top">
+
+                        <div className="dashboard-kpi-icon dashboard-kpi-progress">
+                            <Clock3 size={20} />
+                        </div>
+
+                        <span className="dashboard-kpi-label">
                             In Progress
                         </span>
+
                     </div>
 
-                    <div className="stat-value">
-                        {
-                            stats.tickets
-                                .inProgress
-                        }
-                    </div>
+                    <strong className="dashboard-kpi-value">
+                        {stats.tickets.inProgress}
+                    </strong>
 
-                    <div className="stat-footer">
+                    <div className="dashboard-kpi-bottom">
                         <span>
-                            Active IT support
-                            work
+                            Active support work
                         </span>
                     </div>
+
                 </article>
 
-                {/* RESOLVED */}
+                <article className="dashboard-kpi">
 
-                <article className="stat-card">
-                    <div className="stat-card-top">
-                        <div className="stat-icon">
+                    <div className="dashboard-kpi-top">
+
+                        <div className="dashboard-kpi-icon dashboard-kpi-success">
                             <CheckCircle2
-                                size={21}
+                                size={20}
                             />
                         </div>
 
-                        <span className="stat-label">
+                        <span className="dashboard-kpi-label">
                             Resolved
                         </span>
+
                     </div>
 
-                    <div className="stat-value">
-                        {
-                            stats.tickets
-                                .resolved
-                        }
-                    </div>
+                    <strong className="dashboard-kpi-value">
+                        {stats.tickets.resolved}
+                    </strong>
 
-                    <div className="stat-footer">
+                    <div className="dashboard-kpi-bottom">
                         <span>
-                            Issues resolved
-                            successfully
+                            Successfully handled
                         </span>
                     </div>
+
                 </article>
 
-                {/* SLA BREACHED */}
-
                 <article
-                    className={`stat-card ${stats.tickets
-                            .slaBreached > 0
-                            ? "stat-card-danger"
-                            : ""
+                    className={`dashboard-kpi ${stats.tickets.slaBreached >
+                        0
+                        ? "dashboard-kpi-alert"
+                        : ""
                         }`}
                 >
-                    <div className="stat-card-top">
-                        <div className="stat-icon">
-                            <AlertTriangle
-                                size={21}
+
+                    <div className="dashboard-kpi-top">
+
+                        <div className="dashboard-kpi-icon dashboard-kpi-danger">
+                            <AlertCircle
+                                size={20}
                             />
                         </div>
 
-                        <span className="stat-label">
+                        <span className="dashboard-kpi-label">
                             SLA Breached
                         </span>
+
                     </div>
 
-                    <div className="stat-value">
-                        {
-                            stats.tickets
-                                .slaBreached
-                        }
-                    </div>
+                    <strong className="dashboard-kpi-value">
+                        {stats.tickets.slaBreached}
+                    </strong>
 
-                    <div className="stat-footer">
+                    <div className="dashboard-kpi-bottom">
                         <span>
                             Requires attention
                         </span>
                     </div>
+
                 </article>
 
             </section>
 
-            {/* =====================================================
-          CHARTS
-          ===================================================== */}
+            {/* MAIN ANALYTICS */}
 
-            <section className="dashboard-main-grid">
+            <section className="dashboard-analytics-grid">
 
-                {/* TICKET OVERVIEW */}
+                {/* BAR CHART */}
 
-                <article className="dashboard-panel dashboard-chart-panel">
+                <article className="dashboard-surface dashboard-ticket-chart">
 
-                    <div className="panel-header">
+                    <div className="dashboard-panel-header">
+
                         <div>
+
+                            <span className="dashboard-panel-eyebrow">
+                                SUPPORT FLOW
+                            </span>
+
                             <h2>
                                 Ticket Overview
                             </h2>
 
                             <p>
-                                Current support
-                                workload by status
+                                Current workload
+                                across every support stage.
                             </p>
+
                         </div>
 
-                        <div className="panel-chip">
+                        <div className="dashboard-live-chip">
+                            <span />
                             Live
                         </div>
+
                     </div>
 
-                    <div className="chart-container">
+                    <div className="dashboard-chart-container">
 
                         <ResponsiveContainer
                             width="100%"
-                            height={280}
+                            height={270}
                         >
+
                             <BarChart
-                                data={
-                                    ticketChartData
-                                }
-                                barSize={32}
+                                data={ticketChartData}
+                                barSize={30}
                             >
+
                                 <CartesianGrid
-                                    strokeDasharray="3 3"
+                                    strokeDasharray="4 5"
                                     vertical={false}
-                                    stroke="rgba(255,255,255,0.07)"
+                                    stroke="rgba(100, 75, 50, 0.07)"
                                 />
 
                                 <XAxis
@@ -696,106 +754,108 @@ export default function DashboardPage() {
                                     tickLine={false}
                                     tick={{
                                         fill:
-                                            "#898696",
-                                        fontSize: 12,
+                                            "#998A7C",
+                                        fontSize: 11,
                                     }}
                                 />
 
                                 <YAxis
-                                    allowDecimals={
-                                        false
-                                    }
+                                    allowDecimals={false}
                                     axisLine={false}
                                     tickLine={false}
                                     tick={{
                                         fill:
-                                            "#898696",
-                                        fontSize: 12,
+                                            "#A09184",
+                                        fontSize: 11,
                                     }}
                                 />
 
                                 <Tooltip
                                     cursor={{
                                         fill:
-                                            "rgba(124, 92, 255, 0.07)",
+                                            "rgba(255, 208, 55, 0.07)",
                                     }}
                                     contentStyle={{
                                         background:
-                                            "#17151c",
-
+                                            "rgba(61, 44, 30, .94)",
                                         border:
                                             "1px solid rgba(255,255,255,.1)",
-
                                         borderRadius:
-                                            "12px",
-
-                                        color:
-                                            "#fff",
+                                            "13px",
+                                        color: "#fff",
+                                        boxShadow:
+                                            "0 15px 35px rgba(59,40,23,.16)",
                                     }}
                                 />
 
                                 <Bar
                                     dataKey="value"
-                                    fill="#8b72ff"
+                                    fill="#E7B82B"
                                     radius={[
-                                        8,
-                                        8,
-                                        2,
-                                        2,
+                                        9,
+                                        9,
+                                        3,
+                                        3,
                                     ]}
                                 />
+
                             </BarChart>
+
                         </ResponsiveContainer>
 
                     </div>
+
                 </article>
 
-                {/* PRIORITY DISTRIBUTION */}
+                {/* PRIORITY */}
 
-                <article className="dashboard-panel">
+                <article className="dashboard-surface dashboard-priority-panel">
 
-                    <div className="panel-header">
+                    <div className="dashboard-panel-header">
+
                         <div>
+
+                            <span className="dashboard-panel-eyebrow">
+                                RISK
+                            </span>
+
                             <h2>
                                 Ticket Priority
                             </h2>
 
                             <p>
-                                Current risk
-                                distribution
+                                Current support
+                                urgency distribution.
                             </p>
+
                         </div>
+
                     </div>
 
-                    <div className="priority-chart-layout">
+                    <div className="dashboard-donut-layout">
 
-                        <div className="pie-chart">
+                        <div className="dashboard-donut">
 
                             <ResponsiveContainer
                                 width="100%"
-                                height={220}
+                                height={210}
                             >
+
                                 <PieChart>
+
                                     <Pie
                                         data={
                                             priorityChartData
                                         }
                                         dataKey="value"
                                         nameKey="name"
-                                        innerRadius={
-                                            58
-                                        }
-                                        outerRadius={
-                                            85
-                                        }
-                                        paddingAngle={
-                                            4
-                                        }
+                                        innerRadius={61}
+                                        outerRadius={83}
+                                        paddingAngle={4}
+                                        stroke="none"
                                     >
                                         {priorityChartData.map(
-                                            (
-                                                entry
-                                            ) => (
+                                            (entry) => (
                                                 <Cell
                                                     key={
                                                         entry.name
@@ -811,48 +871,47 @@ export default function DashboardPage() {
                                     <Tooltip
                                         contentStyle={{
                                             background:
-                                                "#17151c",
-
+                                                "rgba(61,44,30,.94)",
                                             border:
                                                 "1px solid rgba(255,255,255,.1)",
-
                                             borderRadius:
-                                                "12px",
-
+                                                "13px",
                                             color:
                                                 "#fff",
                                         }}
                                     />
+
                                 </PieChart>
+
                             </ResponsiveContainer>
 
-                            <div className="pie-center">
+                            <div className="dashboard-donut-center">
+
                                 <strong>
-                                    {
-                                        stats.tickets
-                                            .total
-                                    }
+                                    {stats.tickets.total}
                                 </strong>
 
                                 <span>
-                                    Tickets
+                                    tickets
                                 </span>
+
                             </div>
+
                         </div>
 
-                        <div className="chart-legend">
+                        <div className="dashboard-chart-legend">
 
                             {priorityChartData.map(
                                 (item) => (
                                     <div
-                                        className="legend-item"
-                                        key={
-                                            item.name
-                                        }
+                                        className="dashboard-legend-row"
+                                        key={item.name}
                                     >
+
                                         <div>
+
                                             <span
-                                                className="legend-dot"
+                                                className="dashboard-legend-dot"
                                                 style={{
                                                     background:
                                                         item.color,
@@ -860,17 +919,15 @@ export default function DashboardPage() {
                                             />
 
                                             <span>
-                                                {
-                                                    item.name
-                                                }
+                                                {item.name}
                                             </span>
+
                                         </div>
 
                                         <strong>
-                                            {
-                                                item.value
-                                            }
+                                            {item.value}
                                         </strong>
+
                                     </div>
                                 )
                             )}
@@ -878,60 +935,74 @@ export default function DashboardPage() {
                         </div>
 
                     </div>
+
                 </article>
 
             </section>
 
-            {/* =====================================================
-          RECENT TICKETS + ASSETS
-          ===================================================== */}
+            {/* RECENT + ASSETS */}
 
-            <section className="dashboard-bottom-grid">
+            <section className="dashboard-lower-grid">
 
                 {/* RECENT TICKETS */}
 
-                <article className="dashboard-panel recent-tickets-panel">
+                <article className="dashboard-surface dashboard-recent-panel">
 
-                    <div className="panel-header">
+                    <div className="dashboard-panel-header">
+
                         <div>
+
+                            <span className="dashboard-panel-eyebrow">
+                                ACTIVITY
+                            </span>
+
                             <h2>
                                 Recent Tickets
                             </h2>
 
                             <p>
-                                Latest IT support
-                                requests
+                                Latest requests
+                                entering the support desk.
                             </p>
+
                         </div>
 
                         <Link
                             to="/tickets"
-                            className="panel-link"
+                            className="dashboard-panel-link"
                         >
                             View all
 
-                            <ArrowRight
-                                size={15}
+                            <ArrowUpRight
+                                size={14}
                             />
                         </Link>
+
                     </div>
 
                     {recentTickets.length ===
                         0 ? (
-                        <div className="empty-state">
+                        <div className="dashboard-empty">
+
                             <CircleDot
-                                size={30}
+                                size={26}
                             />
 
+                            <strong>
+                                All clear
+                            </strong>
+
                             <p>
-                                No tickets
+                                No support tickets
                                 available yet.
                             </p>
+
                         </div>
                     ) : (
-                        <div className="tickets-table-wrapper">
+                        <div className="dashboard-table-scroll">
 
-                            <table className="dashboard-table">
+                            <table className="dashboard-ticket-table">
+
                                 <thead>
                                     <tr>
                                         <th>
@@ -951,25 +1022,25 @@ export default function DashboardPage() {
                                         </th>
 
                                         <th>
-                                            Assigned To
+                                            Assigned
                                         </th>
                                     </tr>
                                 </thead>
 
                                 <tbody>
+
                                     {recentTickets.map(
-                                        (
-                                            ticket
-                                        ) => (
+                                        (ticket) => (
                                             <tr
                                                 key={
                                                     ticket.id
                                                 }
                                             >
+
                                                 <td>
                                                     <Link
                                                         to={`/tickets/${ticket.id}`}
-                                                        className="ticket-number"
+                                                        className="dashboard-ticket-number"
                                                     >
                                                         {
                                                             ticket.ticketNumber
@@ -978,7 +1049,9 @@ export default function DashboardPage() {
                                                 </td>
 
                                                 <td>
-                                                    <div className="ticket-title-cell">
+
+                                                    <div className="dashboard-ticket-copy">
+
                                                         <strong>
                                                             {
                                                                 ticket.title
@@ -990,14 +1063,18 @@ export default function DashboardPage() {
                                                                 ?.name ??
                                                                 "General"}
                                                         </span>
+
                                                     </div>
+
                                                 </td>
 
                                                 <td>
                                                     <span
-                                                        className={getPriorityClass(
-                                                            ticket.priority
-                                                        )}
+                                                        className={
+                                                            getPriorityClass(
+                                                                ticket.priority
+                                                            )
+                                                        }
                                                     >
                                                         {
                                                             ticket.priority
@@ -1007,25 +1084,34 @@ export default function DashboardPage() {
 
                                                 <td>
                                                     <span
-                                                        className={getStatusClass(
-                                                            ticket.status
-                                                        )}
+                                                        className={
+                                                            getStatusClass(
+                                                                ticket.status
+                                                            )
+                                                        }
                                                     >
-                                                        {formatStatus(
-                                                            ticket.status
-                                                        )}
+                                                        {
+                                                            formatStatus(
+                                                                ticket.status
+                                                            )
+                                                        }
                                                     </span>
                                                 </td>
 
                                                 <td>
-                                                    {ticket.assignedTo
-                                                        ?.fullName ??
-                                                        "Unassigned"}
+                                                    <span className="dashboard-assignee">
+                                                        {ticket.assignedTo
+                                                            ?.fullName ??
+                                                            "Unassigned"}
+                                                    </span>
                                                 </td>
+
                                             </tr>
                                         )
                                     )}
+
                                 </tbody>
+
                             </table>
 
                         </div>
@@ -1033,54 +1119,59 @@ export default function DashboardPage() {
 
                 </article>
 
-                {/* ASSETS SUMMARY */}
+                {/* ASSET HEALTH */}
 
-                <article className="dashboard-panel assets-summary-panel">
+                <article className="dashboard-surface dashboard-assets-panel">
 
-                    <div className="panel-header">
+                    <div className="dashboard-panel-header">
+
                         <div>
+
+                            <span className="dashboard-panel-eyebrow">
+                                INFRASTRUCTURE
+                            </span>
+
                             <h2>
-                                Asset Status
+                                Asset Health
                             </h2>
 
                             <p>
-                                Infrastructure
-                                availability
+                                Current IT inventory
+                                status.
                             </p>
+
                         </div>
 
-                        <Wrench
-                            size={19}
-                        />
+                        <div className="dashboard-panel-round-icon">
+                            <ServerCog
+                                size={18}
+                            />
+                        </div>
+
                     </div>
 
-                    <div className="assets-pie">
+                    <div className="dashboard-assets-donut">
 
                         <ResponsiveContainer
                             width="100%"
-                            height={205}
+                            height={195}
                         >
+
                             <PieChart>
+
                                 <Pie
                                     data={
                                         assetChartData
                                     }
                                     dataKey="value"
                                     nameKey="name"
-                                    innerRadius={
-                                        52
-                                    }
-                                    outerRadius={
-                                        76
-                                    }
-                                    paddingAngle={
-                                        5
-                                    }
+                                    innerRadius={53}
+                                    outerRadius={75}
+                                    paddingAngle={5}
+                                    stroke="none"
                                 >
                                     {assetChartData.map(
-                                        (
-                                            entry
-                                        ) => (
+                                        (entry) => (
                                             <Cell
                                                 key={
                                                     entry.name
@@ -1096,47 +1187,47 @@ export default function DashboardPage() {
                                 <Tooltip
                                     contentStyle={{
                                         background:
-                                            "#17151c",
-
+                                            "rgba(61,44,30,.94)",
                                         border:
                                             "1px solid rgba(255,255,255,.1)",
-
                                         borderRadius:
-                                            "12px",
-
+                                            "13px",
                                         color:
                                             "#fff",
                                     }}
                                 />
+
                             </PieChart>
+
                         </ResponsiveContainer>
 
-                        <div className="assets-pie-center">
+                        <div className="dashboard-assets-center">
+
                             <strong>
                                 {
-                                    stats.assets
-                                        .total
+                                    stats.assets.total
                                 }
                             </strong>
 
                             <span>
                                 Assets
                             </span>
+
                         </div>
 
                     </div>
 
-                    <div className="asset-summary-list">
+                    <div className="dashboard-assets-list">
 
                         {assetChartData.map(
                             (item) => (
                                 <div
-                                    className="asset-summary-row"
-                                    key={
-                                        item.name
-                                    }
+                                    className="dashboard-asset-row"
+                                    key={item.name}
                                 >
+
                                     <div>
+
                                         <span
                                             style={{
                                                 background:
@@ -1144,16 +1235,14 @@ export default function DashboardPage() {
                                             }}
                                         />
 
-                                        {
-                                            item.name
-                                        }
+                                        {item.name}
+
                                     </div>
 
                                     <strong>
-                                        {
-                                            item.value
-                                        }
+                                        {item.value}
                                     </strong>
+
                                 </div>
                             )
                         )}
@@ -1162,12 +1251,12 @@ export default function DashboardPage() {
 
                     <Link
                         to="/assets"
-                        className="asset-view-link"
+                        className="dashboard-assets-link"
                     >
                         Manage Assets
 
-                        <ArrowRight
-                            size={15}
+                        <ArrowUpRight
+                            size={14}
                         />
                     </Link>
 
@@ -1175,89 +1264,157 @@ export default function DashboardPage() {
 
             </section>
 
-            {/* =====================================================
-          MINI STATS
-          ===================================================== */}
+            {/* QUICK OPERATIONS */}
 
-            <section className="mini-stats-grid">
+            <section className="dashboard-quick-grid">
 
-                <article className="mini-stat">
-                    <Users
-                        size={20}
-                    />
+                <div className="dashboard-quick-heading">
 
                     <div>
-                        <span>
-                            Active Users
+
+                        <span className="dashboard-panel-eyebrow">
+                            QUICK VIEW
                         </span>
 
-                        <strong>
-                            {
-                                stats.users
-                                    .totalActive
-                            }
-                        </strong>
-                    </div>
-                </article>
+                        <h2>
+                            Operations Snapshot
+                        </h2>
 
-                <article className="mini-stat">
-                    <Laptop
-                        size={20}
+                    </div>
+
+                    <Sparkles
+                        size={18}
                     />
 
-                    <div>
-                        <span>
-                            Total Assets
-                        </span>
+                </div>
 
-                        <strong>
-                            {
-                                stats.assets
-                                    .total
-                            }
-                        </strong>
-                    </div>
-                </article>
+                <div className="dashboard-quick-items">
 
-                <article className="mini-stat">
-                    <Wrench
-                        size={20}
-                    />
+                    <article className="dashboard-quick-card">
 
-                    <div>
-                        <span>
-                            Maintenance
-                        </span>
+                        <div className="dashboard-quick-icon">
+                            <Users size={18} />
+                        </div>
 
-                        <strong>
-                            {
-                                stats.assets
-                                    .maintenance
-                            }
-                        </strong>
-                    </div>
-                </article>
+                        <div>
+                            <span>
+                                Active Users
+                            </span>
 
-                <article className="mini-stat">
-                    <AlertTriangle
-                        size={20}
-                    />
+                            <strong>
+                                {
+                                    stats.users
+                                        .totalActive
+                                }
+                            </strong>
+                        </div>
 
-                    <div>
-                        <span>
-                            Critical Issues
-                        </span>
+                    </article>
 
-                        <strong>
-                            {
-                                stats.tickets
-                                    .critical
-                            }
-                        </strong>
-                    </div>
-                </article>
+                    <article className="dashboard-quick-card">
+
+                        <div className="dashboard-quick-icon">
+                            <Laptop size={18} />
+                        </div>
+
+                        <div>
+                            <span>
+                                Total Assets
+                            </span>
+
+                            <strong>
+                                {
+                                    stats.assets.total
+                                }
+                            </strong>
+                        </div>
+
+                    </article>
+
+                    <article className="dashboard-quick-card">
+
+                        <div className="dashboard-quick-icon dashboard-quick-maintenance">
+                            <Wrench size={18} />
+                        </div>
+
+                        <div>
+                            <span>
+                                Maintenance
+                            </span>
+
+                            <strong>
+                                {
+                                    stats.assets
+                                        .maintenance
+                                }
+                            </strong>
+                        </div>
+
+                    </article>
+
+                    <article className="dashboard-quick-card">
+
+                        <div className="dashboard-quick-icon dashboard-quick-critical">
+                            <AlertTriangle
+                                size={18}
+                            />
+                        </div>
+
+                        <div>
+                            <span>
+                                Critical Issues
+                            </span>
+
+                            <strong>
+                                {
+                                    stats.tickets
+                                        .critical
+                                }
+                            </strong>
+                        </div>
+
+                    </article>
+
+                </div>
 
             </section>
+
+            {/* ADMIN QUICK ACTION */}
+
+            {isAdmin && (
+                <section className="dashboard-admin-strip">
+
+                    <div>
+
+                        <div className="dashboard-admin-icon">
+                            <ServerCog
+                                size={20}
+                            />
+                        </div>
+
+                        <div>
+                            <strong>
+                                Asset administration
+                            </strong>
+
+                            <span>
+                                Register and manage
+                                company IT equipment.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <Link
+                        to="/assets/new"
+                    >
+                        <Plus size={15} />
+
+                        Add Asset
+                    </Link>
+
+                </section>
+            )}
 
         </div>
     );

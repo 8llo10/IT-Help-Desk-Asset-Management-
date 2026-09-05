@@ -1,39 +1,148 @@
 :root {
-    --color-bg: #080607;
-    --color-bg-soft: #100b0c;
+    /* =========================================================
+     WASL BRAND
+     ========================================================= */
 
-    --color-surface: rgba(19, 12, 13, 0.86);
-    --color-surface-strong: rgba(12, 8, 9, 0.95);
+    --yellow-50: #fffdf4;
+    --yellow-100: #fff8d9;
+    --yellow-200: #ffefae;
+    --yellow-300: #ffe47a;
+    --yellow-400: #ffd752;
+    --yellow-500: #ffc82e;
+    --yellow-600: #e9a91c;
 
-    --color-border: rgba(255, 255, 255, 0.08);
-    --color-border-strong: rgba(255, 255, 255, 0.13);
+    --pink-50: #fff8f8;
+    --pink-100: #fdecec;
+    --pink-200: #f7d4d6;
+    --pink-300: #efb9bd;
 
-    --color-text: #f6f3f3;
-    --color-text-soft: #c9bfc0;
-    --color-muted: #8f8183;
+    --brown-50: #f8f5f1;
+    --brown-100: #eee6dd;
+    --brown-200: #d7c5b2;
+    --brown-300: #b69a7c;
+    --brown-400: #8e7056;
+    --brown-500: #6d503a;
+    --brown-600: #4c3425;
+    --brown-700: #342217;
+    --brown-800: #20150e;
 
-    --color-accent: #8d1018;
-    --color-accent-2: #bd343a;
-    --color-accent-soft: rgba(141, 16, 24, 0.18);
+    --green-100: #edf2df;
+    --green-400: #82936a;
+    --green-500: #66784f;
 
-    --color-danger: #ff5d6c;
-    --color-warning: #ffb45d;
-    --color-success: #6fdaa7;
+    /* =========================================================
+     BACKGROUNDS
+     ========================================================= */
 
-    --shadow-soft:
-        0 18px 45px rgba(0, 0, 0, 0.28);
+    --page-bg: #fffdf8;
+    --page-bg-soft: #fffaf0;
 
-    --shadow-accent:
-        0 12px 35px rgba(141, 16, 24, 0.18);
+    --surface: rgba(255, 255, 255, 0.9);
+    --surface-solid: #ffffff;
+    --surface-soft: #fffaf2;
+    --surface-yellow: #fff7d8;
+    --surface-pink: #fff1f1;
+
+    /* =========================================================
+     TEXT
+     ========================================================= */
+
+    --text-primary: #2e2118;
+    --text-secondary: #705f52;
+    --text-muted: #9b8b7e;
+    --text-light: #ffffff;
+
+    /* =========================================================
+     BORDER
+     ========================================================= */
+
+    --border: #eadfd2;
+    --border-soft: #f1e8de;
+    --border-yellow: #f4d77d;
+
+    /* =========================================================
+     ACCENTS
+     ========================================================= */
+
+    --accent: #ffc82e;
+    --accent-hover: #f2b814;
+    --accent-soft: #fff4c6;
+
+    --danger: #c75454;
+    --danger-soft: #fff0f0;
+
+    --success: #638054;
+    --success-soft: #eff6e8;
+
+    --warning: #bb8127;
+    --warning-soft: #fff5dc;
+
+    --info: #6d766d;
+    --info-soft: #eef2ed;
+
+    /* =========================================================
+     SHADOWS
+     ========================================================= */
+
+    --shadow-xs:
+        0 2px 8px rgba(74, 50, 30, 0.04);
+
+    --shadow-sm:
+        0 8px 24px rgba(74, 50, 30, 0.07);
+
+    --shadow-md:
+        0 14px 40px rgba(74, 50, 30, 0.1);
+
+    --shadow-lg:
+        0 28px 80px rgba(74, 50, 30, 0.14);
+
+    --yellow-shadow:
+        0 12px 34px rgba(255, 200, 46, 0.22);
+
+    /* =========================================================
+     RADIUS
+     ========================================================= */
 
     --radius-sm: 10px;
-    --radius-md: 14px;
-    --radius-lg: 18px;
-    --radius-xl: 22px;
+    --radius-md: 16px;
+    --radius-lg: 22px;
+    --radius-xl: 30px;
+    --radius-pill: 999px;
 
-    --sidebar-width: 248px;
+    /* =========================================================
+     TRANSITIONS
+     ========================================================= */
 
     --transition-fast: 160ms ease;
-    --transition-normal: 240ms ease;
-    --transition-slow: 420ms ease;
+    --transition-normal: 260ms ease;
+    --transition-slow: 450ms ease;
+
+    /* =========================================================
+     LAYOUT
+     ========================================================= */
+
+    --sidebar-width: 260px;
+    --navbar-height: 76px;
+
+    /* =========================================================
+     GRADIENTS
+     ========================================================= */
+
+    --brand-gradient:
+        linear-gradient(135deg,
+            #ffc82e 0%,
+            #ffe47a 38%,
+            #fff5de 70%,
+            #fffdf8 100%);
+
+    --soft-gradient:
+        linear-gradient(135deg,
+            rgba(255, 200, 46, 0.13),
+            rgba(255, 255, 255, 0.96),
+            rgba(247, 212, 214, 0.16));
+
+    --card-gradient:
+        linear-gradient(145deg,
+            rgba(255, 255, 255, 0.96),
+            rgba(255, 250, 241, 0.88));
 }

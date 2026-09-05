@@ -23,13 +23,16 @@ import {
     UsersRound,
 } from "lucide-react";
 
-import catLogo from "../assets/cat-logo.png";
+import waslLogo from "../assets/wasl-logo.png";
+import waslCharacters from "../assets/wasl-characters.png";
 
 import useAuth from "../hooks/useAuth";
 
 import type {
     UserRole,
 } from "../context/AuthContext";
+
+import "../styles/Sidebar.css";
 
 interface SidebarItem {
     label: string;
@@ -66,6 +69,7 @@ const sections: SidebarSection[] = [
 
     {
         title: "Management",
+
         items: [
             {
                 label: "Users",
@@ -102,6 +106,7 @@ const sections: SidebarSection[] = [
 
     {
         title: "Organization",
+
         items: [
             {
                 label: "Organization",
@@ -126,11 +131,13 @@ const sections: SidebarSection[] = [
 
     {
         title: "Insights",
+
         items: [
             {
                 label: "Reports",
                 path: "/reports",
                 icon: BarChart3,
+
                 roles: [
                     "ADMIN",
                     "TECHNICIAN",
@@ -146,22 +153,35 @@ const sections: SidebarSection[] = [
 ];
 
 export default function Sidebar() {
-    const { user } = useAuth();
+    const {
+        user,
+    } = useAuth();
 
-    const role = user?.role;
+    const role =
+        user?.role;
+
+    /* =========================================================
+       ACCESS
+       ========================================================= */
 
     const canSeeItem = (
         item: SidebarItem
     ) => {
-        if (!item.roles) {
+        if (
+            !item.roles
+        ) {
             return true;
         }
 
-        if (!role) {
+        if (
+            !role
+        ) {
             return false;
         }
 
-        return item.roles.includes(role);
+        return item.roles.includes(
+            role
+        );
     };
 
     const linkClass = ({
@@ -173,24 +193,47 @@ export default function Sidebar() {
             ? "sidebar-link active"
             : "sidebar-link";
 
+    /* =========================================================
+       UI
+       ========================================================= */
+
     return (
         <aside className="sidebar">
 
-            <div className="sidebar-brand">
+            {/* =====================================================
+          BRAND
+          ===================================================== */}
+
+            <NavLink
+                to="/dashboard"
+                className="sidebar-brand"
+            >
                 <div className="sidebar-logo">
+
                     <img
-                        src={catLogo}
+                        src={waslLogo}
                         alt="WASL"
                     />
+
                 </div>
 
                 <div className="sidebar-brand-text">
-                    <h2>WASL</h2>
+
+                    <strong>
+                        WASL
+                    </strong>
+
                     <span>
                         IT Management
                     </span>
+
                 </div>
-            </div>
+
+            </NavLink>
+
+            {/* =====================================================
+          NAVIGATION
+          ===================================================== */}
 
             <nav className="sidebar-nav">
 
@@ -205,7 +248,8 @@ export default function Sidebar() {
                             );
 
                         if (
-                            visibleItems.length === 0
+                            visibleItems.length ===
+                            0
                         ) {
                             return null;
                         }
@@ -218,44 +262,54 @@ export default function Sidebar() {
                                     sectionIndex
                                 }
                             >
+
                                 {section.title && (
                                     <div className="sidebar-section-label">
                                         {section.title}
                                     </div>
                                 )}
 
-                                {visibleItems.map(
-                                    (item) => {
-                                        const Icon =
-                                            item.icon;
+                                <div className="sidebar-section-links">
 
-                                        return (
-                                            <NavLink
-                                                key={
-                                                    item.path
-                                                }
-                                                to={
-                                                    item.path
-                                                }
-                                                className={
-                                                    linkClass
-                                                }
-                                            >
-                                                <Icon
-                                                    size={
-                                                        19
+                                    {visibleItems.map(
+                                        (item) => {
+                                            const Icon =
+                                                item.icon;
+
+                                            return (
+                                                <NavLink
+                                                    key={
+                                                        item.path
                                                     }
-                                                />
-
-                                                <span>
-                                                    {
+                                                    to={
+                                                        item.path
+                                                    }
+                                                    className={
+                                                        linkClass
+                                                    }
+                                                    title={
                                                         item.label
                                                     }
-                                                </span>
-                                            </NavLink>
-                                        );
-                                    }
-                                )}
+                                                >
+
+                                                    <span className="sidebar-link-icon">
+                                                        <Icon
+                                                            size={18}
+                                                            strokeWidth={1.9}
+                                                        />
+                                                    </span>
+
+                                                    <span className="sidebar-link-label">
+                                                        {item.label}
+                                                    </span>
+
+                                                </NavLink>
+                                            );
+                                        }
+                                    )}
+
+                                </div>
+
                             </div>
                         );
                     }
@@ -263,23 +317,61 @@ export default function Sidebar() {
 
             </nav>
 
+            {/* =====================================================
+          BOTTOM
+          ===================================================== */}
+
             <div className="sidebar-bottom">
 
-                <NavLink
-                    to="/tickets/new"
-                    className="sidebar-bottom-link"
-                >
-                    <LifeBuoy size={18} />
+                {/* SUPPORT CARD */}
 
-                    <span>
-                        Get Support
-                    </span>
-                </NavLink>
+                <div className="sidebar-support-card">
+
+                    <div className="sidebar-support-copy">
+
+                        <span>
+                            NEED HELP?
+                        </span>
+
+                        <strong>
+                            IT Support
+                        </strong>
+
+                        <p>
+                            Create a support request
+                            and let the IT team help.
+                        </p>
+
+                        <NavLink
+                            to="/tickets/new"
+                            className="sidebar-support-button"
+                        >
+                            <LifeBuoy
+                                size={16}
+                            />
+
+                            Get Support
+                        </NavLink>
+
+                    </div>
+
+                    <img
+                        src={waslCharacters}
+                        alt=""
+                        aria-hidden="true"
+                        className="sidebar-support-mascot"
+                    />
+
+                </div>
+
+                {/* SYSTEM STATUS */}
 
                 <div className="sidebar-system-status">
-                    <span className="status-dot" />
+
+                    <span className="sidebar-status-dot" />
 
                     <div>
+
                         <strong>
                             System Online
                         </strong>
@@ -287,10 +379,13 @@ export default function Sidebar() {
                         <small>
                             All services operational
                         </small>
+
                     </div>
+
                 </div>
 
             </div>
+
         </aside>
     );
 }

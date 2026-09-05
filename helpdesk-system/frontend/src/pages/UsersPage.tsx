@@ -8,7 +8,26 @@ import {
     useNavigate,
 } from "react-router-dom";
 
+import {
+    BadgeCheck,
+    BriefcaseBusiness,
+    Building2,
+    CheckCircle2,
+    ChevronRight,
+    CircleDot,
+    Filter,
+    Fingerprint,
+    Search,
+    ShieldCheck,
+    Sparkles,
+    UserCog,
+    UsersRound,
+    X,
+} from "lucide-react";
+
 import api from "../api/client";
+
+import "../styles/UsersPage.css";
 
 type UserRole =
     | "EMPLOYEE"
@@ -30,8 +49,10 @@ interface User {
     id: number;
     fullName: string;
     email: string;
+
     employeeNumber?: string | null;
     jobTitle?: string | null;
+
     role: UserRole;
     isActive: boolean;
 
@@ -39,103 +60,160 @@ interface User {
     department?: Department | null;
 }
 
-export default function UsersPage() {
-    const navigate = useNavigate();
+function formatRole(
+    role: UserRole
+) {
+    switch (role) {
+        case "ADMIN":
+            return "Administrator";
 
-    const [users, setUsers] =
+        case "TECHNICIAN":
+            return "Technician";
+
+        case "EMPLOYEE":
+            return "Employee";
+    }
+}
+
+export default function UsersPage() {
+    const navigate =
+        useNavigate();
+
+    const [
+        users,
+        setUsers,
+    ] =
         useState<User[]>([]);
 
-    const [loading, setLoading] =
+    const [
+        loading,
+        setLoading,
+    ] =
         useState(true);
 
-    const [error, setError] =
+    const [
+        error,
+        setError,
+    ] =
         useState("");
 
-    const [search, setSearch] =
+    const [
+        search,
+        setSearch,
+    ] =
         useState("");
 
-    const [roleFilter, setRoleFilter] =
+    const [
+        roleFilter,
+        setRoleFilter,
+    ] =
         useState("");
 
-    const [statusFilter, setStatusFilter] =
+    const [
+        statusFilter,
+        setStatusFilter,
+    ] =
         useState("");
 
-    const fetchUsers = async () => {
-        try {
-            setLoading(true);
-            setError("");
+    /* =====================================================
+       FETCH
+       ===================================================== */
 
-            const response =
-                await api.get("/users");
+    const fetchUsers =
+        async () => {
+            try {
+                setLoading(true);
+                setError("");
 
-            const data =
-                response.data?.data;
+                const response =
+                    await api.get(
+                        "/users"
+                    );
 
-            setUsers(
-                data?.users ??
-                data ??
-                []
-            );
-        } catch (error: any) {
-            setError(
-                error.response?.data?.message ??
-                "Failed to load users"
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
+                const data =
+                    response.data
+                        ?.data;
+
+                setUsers(
+                    data?.users ??
+                    data ??
+                    []
+                );
+            } catch (
+            error: any
+            ) {
+                setError(
+                    error.response
+                        ?.data
+                        ?.message ??
+                    "Failed to load users"
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
 
     useEffect(() => {
         void fetchUsers();
     }, []);
 
+    /* =====================================================
+       FILTER
+       ===================================================== */
+
     const filteredUsers =
         useMemo(() => {
-            return users.filter((user) => {
-                const normalizedSearch =
-                    search
-                        .trim()
-                        .toLowerCase();
+            const normalizedSearch =
+                search
+                    .trim()
+                    .toLowerCase();
 
-                const matchesSearch =
-                    !normalizedSearch ||
-                    user.fullName
-                        .toLowerCase()
-                        .includes(normalizedSearch) ||
-                    user.email
-                        .toLowerCase()
-                        .includes(normalizedSearch) ||
-                    user.employeeNumber
-                        ?.toLowerCase()
-                        .includes(
-                            normalizedSearch
-                        ) ||
-                    user.jobTitle
-                        ?.toLowerCase()
-                        .includes(
-                            normalizedSearch
+            return users.filter(
+                (user) => {
+                    const matchesSearch =
+                        !normalizedSearch ||
+                        user.fullName
+                            .toLowerCase()
+                            .includes(
+                                normalizedSearch
+                            ) ||
+                        user.email
+                            .toLowerCase()
+                            .includes(
+                                normalizedSearch
+                            ) ||
+                        user.employeeNumber
+                            ?.toLowerCase()
+                            .includes(
+                                normalizedSearch
+                            ) ||
+                        user.jobTitle
+                            ?.toLowerCase()
+                            .includes(
+                                normalizedSearch
+                            );
+
+                    const matchesRole =
+                        !roleFilter ||
+                        user.role ===
+                        roleFilter;
+
+                    const matchesStatus =
+                        !statusFilter ||
+                        (
+                            statusFilter ===
+                                "ACTIVE"
+                                ? user.isActive
+                                : !user.isActive
                         );
 
-                const matchesRole =
-                    !roleFilter ||
-                    user.role === roleFilter;
-
-                const matchesStatus =
-                    !statusFilter ||
-                    (
-                        statusFilter ===
-                            "ACTIVE"
-                            ? user.isActive
-                            : !user.isActive
+                    return (
+                        matchesSearch &&
+                        matchesRole &&
+                        matchesStatus
                     );
-
-                return (
-                    matchesSearch &&
-                    matchesRole &&
-                    matchesStatus
-                );
-            });
+                }
+            );
         }, [
             users,
             search,
@@ -143,168 +221,693 @@ export default function UsersPage() {
             statusFilter,
         ]);
 
+    /* =====================================================
+       REAL STATS
+       ===================================================== */
+
+    const stats =
+        useMemo(() => {
+            const active =
+                users.filter(
+                    (user) =>
+                        user.isActive
+                ).length;
+
+            const employees =
+                users.filter(
+                    (user) =>
+                        user.role ===
+                        "EMPLOYEE"
+                ).length;
+
+            const technicians =
+                users.filter(
+                    (user) =>
+                        user.role ===
+                        "TECHNICIAN"
+                ).length;
+
+            const admins =
+                users.filter(
+                    (user) =>
+                        user.role ===
+                        "ADMIN"
+                ).length;
+
+            return {
+                active,
+                employees,
+                technicians,
+                admins,
+            };
+        }, [users]);
+
+    const hasFilters =
+        Boolean(
+            search ||
+            roleFilter ||
+            statusFilter
+        );
+
+    const clearFilters = () => {
+        setSearch("");
+        setRoleFilter("");
+        setStatusFilter("");
+    };
+
+    /* =====================================================
+       LOADING
+       ===================================================== */
+
     if (loading) {
         return (
-            <p>
-                Loading users...
-            </p>
+            <div className="users-page-loading">
+
+                <div className="users-page-loading-icon">
+                    <UsersRound
+                        size={25}
+                    />
+                </div>
+
+                <strong>
+                    Loading users
+                </strong>
+
+                <p>
+                    Preparing WASL user
+                    directory...
+                </p>
+
+            </div>
         );
     }
 
     return (
-        <div>
+        <div className="users-page">
 
-            <div>
-                <h1>Users</h1>
+            {/* =================================================
+                HERO
+                ================================================= */}
 
-                <p>
-                    Manage WASL users and their
-                    system access.
-                </p>
-            </div>
+            <section className="users-hero">
+
+                <div className="users-hero-copy">
+
+                    <div className="users-eyebrow">
+                        <Sparkles
+                            size={12}
+                        />
+
+                        PEOPLE & ACCESS
+                    </div>
+
+                    <h1>
+                        Users
+                    </h1>
+
+                    <p>
+                        Manage WASL users,
+                        account status, base
+                        access and organizational
+                        placement.
+                    </p>
+
+                    <div className="users-hero-tags">
+
+                        <span>
+                            <UsersRound
+                                size={12}
+                            />
+
+                            {users.length}
+                            {" "}
+                            total users
+                        </span>
+
+                        <span>
+                            <CheckCircle2
+                                size={12}
+                            />
+
+                            {stats.active}
+                            {" "}
+                            active
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div className="users-hero-metrics">
+
+                    <article>
+
+                        <div className="users-hero-metric-icon">
+                            <BadgeCheck
+                                size={17}
+                            />
+                        </div>
+
+                        <span>
+                            Employees
+                        </span>
+
+                        <strong>
+                            {
+                                stats.employees
+                            }
+                        </strong>
+
+                    </article>
+
+                    <article>
+
+                        <div className="users-hero-metric-icon pink">
+                            <BriefcaseBusiness
+                                size={17}
+                            />
+                        </div>
+
+                        <span>
+                            Technicians
+                        </span>
+
+                        <strong>
+                            {
+                                stats.technicians
+                            }
+                        </strong>
+
+                    </article>
+
+                    <article>
+
+                        <div className="users-hero-metric-icon brown">
+                            <ShieldCheck
+                                size={17}
+                            />
+                        </div>
+
+                        <span>
+                            Administrators
+                        </span>
+
+                        <strong>
+                            {
+                                stats.admins
+                            }
+                        </strong>
+
+                    </article>
+
+                </div>
+
+            </section>
+
+            {/* =================================================
+                ERROR
+                ================================================= */}
 
             {error && (
-                <p>
-                    {error}
-                </p>
+                <div className="users-alert-error">
+
+                    <X
+                        size={15}
+                    />
+
+                    <span>
+                        {error}
+                    </span>
+
+                </div>
             )}
 
-            <div>
-                <input
-                    type="search"
-                    placeholder="Search name, email or employee number..."
-                    value={search}
-                    onChange={(event) =>
-                        setSearch(
-                            event.target.value
-                        )
-                    }
-                />
+            {/* =================================================
+                DIRECTORY
+                ================================================= */}
 
-                <select
-                    value={roleFilter}
-                    onChange={(event) =>
-                        setRoleFilter(
-                            event.target.value
-                        )
-                    }
-                >
-                    <option value="">
-                        All Roles
-                    </option>
+            <section className="users-directory-card">
 
-                    <option value="EMPLOYEE">
-                        Employee
-                    </option>
+                <div className="users-directory-header">
 
-                    <option value="TECHNICIAN">
-                        Technician
-                    </option>
+                    <div>
 
-                    <option value="ADMIN">
-                        Administrator
-                    </option>
-                </select>
+                        <span className="users-section-label">
+                            USER DIRECTORY
+                        </span>
 
-                <select
-                    value={statusFilter}
-                    onChange={(event) =>
-                        setStatusFilter(
-                            event.target.value
-                        )
-                    }
-                >
-                    <option value="">
-                        All Statuses
-                    </option>
+                        <h2>
+                            Accounts
+                        </h2>
 
-                    <option value="ACTIVE">
-                        Active
-                    </option>
+                        <p>
+                            Search and review users
+                            registered in WASL.
+                        </p>
 
-                    <option value="INACTIVE">
-                        Inactive
-                    </option>
-                </select>
-            </div>
+                    </div>
 
-            {filteredUsers.length === 0 ? (
-                <p>
-                    No users found.
-                </p>
-            ) : (
-                <table>
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Employee Number</th>
-                            <th>Job Title</th>
-                            <th>Base Role</th>
-                            <th>Department</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
+                    <div className="users-directory-count">
 
-                    <tbody>
-                        {filteredUsers.map(
-                            (user) => (
-                                <tr key={user.id}>
+                        <UsersRound
+                            size={14}
+                        />
 
-                                    <td>
-                                        <strong>
-                                            {user.fullName}
-                                        </strong>
+                        <strong>
+                            {
+                                filteredUsers
+                                    .length
+                            }
+                        </strong>
 
-                                        <div>
-                                            {user.email}
-                                        </div>
-                                    </td>
+                        <span>
+                            results
+                        </span>
 
-                                    <td>
-                                        {user.employeeNumber ??
-                                            "—"}
-                                    </td>
+                    </div>
 
-                                    <td>
-                                        {user.jobTitle ??
-                                            "—"}
-                                    </td>
+                </div>
 
-                                    <td>
-                                        {user.role}
-                                    </td>
+                {/* =============================================
+                    FILTERS
+                    ============================================= */}
 
-                                    <td>
-                                        {user.department?.name ??
-                                            "—"}
-                                    </td>
+                <div className="users-toolbar">
 
-                                    <td>
-                                        {user.isActive
-                                            ? "Active"
-                                            : "Inactive"}
-                                    </td>
+                    <div className="users-search">
 
-                                    <td>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                navigate(
-                                                    `/users/${user.id}`
-                                                )
-                                            }
-                                        >
-                                            Manage
-                                        </button>
-                                    </td>
+                        <Search
+                            size={15}
+                        />
+
+                        <input
+                            type="search"
+                            placeholder="Search name, email, employee number or job title..."
+                            value={
+                                search
+                            }
+                            onChange={(
+                                event
+                            ) =>
+                                setSearch(
+                                    event.target
+                                        .value
+                                )
+                            }
+                        />
+
+                        {search && (
+                            <button
+                                type="button"
+                                aria-label="Clear search"
+                                onClick={() =>
+                                    setSearch("")
+                                }
+                            >
+                                <X
+                                    size={14}
+                                />
+                            </button>
+                        )}
+
+                    </div>
+
+                    <div className="users-filter-shell">
+
+                        <ShieldCheck
+                            size={14}
+                        />
+
+                        <select
+                            value={
+                                roleFilter
+                            }
+                            onChange={(
+                                event
+                            ) =>
+                                setRoleFilter(
+                                    event.target
+                                        .value
+                                )
+                            }
+                        >
+                            <option value="">
+                                All Roles
+                            </option>
+
+                            <option value="EMPLOYEE">
+                                Employee
+                            </option>
+
+                            <option value="TECHNICIAN">
+                                Technician
+                            </option>
+
+                            <option value="ADMIN">
+                                Administrator
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div className="users-filter-shell">
+
+                        <Filter
+                            size={14}
+                        />
+
+                        <select
+                            value={
+                                statusFilter
+                            }
+                            onChange={(
+                                event
+                            ) =>
+                                setStatusFilter(
+                                    event.target
+                                        .value
+                                )
+                            }
+                        >
+                            <option value="">
+                                All Statuses
+                            </option>
+
+                            <option value="ACTIVE">
+                                Active
+                            </option>
+
+                            <option value="INACTIVE">
+                                Inactive
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    {hasFilters && (
+                        <button
+                            type="button"
+                            className="users-clear-button"
+                            onClick={
+                                clearFilters
+                            }
+                        >
+                            <X
+                                size={13}
+                            />
+
+                            Clear
+                        </button>
+                    )}
+
+                </div>
+
+                {/* =============================================
+                    EMPTY
+                    ============================================= */}
+
+                {filteredUsers.length ===
+                    0 ? (
+                    <div className="users-empty">
+
+                        <div className="users-empty-icon">
+                            <Search
+                                size={23}
+                            />
+                        </div>
+
+                        <strong>
+                            No users found
+                        </strong>
+
+                        <p>
+                            {hasFilters
+                                ? "No users match the current search and filters."
+                                : "There are no users available."}
+                        </p>
+
+                        {hasFilters && (
+                            <button
+                                type="button"
+                                onClick={
+                                    clearFilters
+                                }
+                            >
+                                Clear Filters
+                            </button>
+                        )}
+
+                    </div>
+                ) : (
+                    <div className="users-table-wrap">
+
+                        <table className="users-table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        User
+                                    </th>
+
+                                    <th>
+                                        Employee
+                                    </th>
+
+                                    <th>
+                                        Job Title
+                                    </th>
+
+                                    <th>
+                                        Base Role
+                                    </th>
+
+                                    <th>
+                                        Department
+                                    </th>
+
+                                    <th>
+                                        Status
+                                    </th>
+
+                                    <th>
+                                        Action
+                                    </th>
 
                                 </tr>
-                            )
-                        )}
-                    </tbody>
-                </table>
-            )}
+
+                            </thead>
+
+                            <tbody>
+
+                                {filteredUsers.map(
+                                    (user) => {
+                                        const initials =
+                                            user.fullName
+                                                .split(" ")
+                                                .filter(
+                                                    Boolean
+                                                )
+                                                .slice(
+                                                    0,
+                                                    2
+                                                )
+                                                .map(
+                                                    (
+                                                        part
+                                                    ) =>
+                                                        part[0]
+                                                )
+                                                .join("")
+                                                .toUpperCase();
+
+                                        return (
+                                            <tr
+                                                key={
+                                                    user.id
+                                                }
+                                            >
+
+                                                {/* USER */}
+
+                                                <td>
+
+                                                    <div className="users-person-cell">
+
+                                                        <div className="users-avatar">
+                                                            {initials ||
+                                                                "U"}
+                                                        </div>
+
+                                                        <div>
+
+                                                            <strong>
+                                                                {
+                                                                    user.fullName
+                                                                }
+                                                            </strong>
+
+                                                            <span>
+                                                                {
+                                                                    user.email
+                                                                }
+                                                            </span>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </td>
+
+                                                {/* EMPLOYEE */}
+
+                                                <td>
+
+                                                    {user.employeeNumber ? (
+                                                        <span className="users-employee-number">
+
+                                                            <Fingerprint
+                                                                size={12}
+                                                            />
+
+                                                            {
+                                                                user.employeeNumber
+                                                            }
+
+                                                        </span>
+                                                    ) : (
+                                                        <span className="users-muted">
+                                                            —
+                                                        </span>
+                                                    )}
+
+                                                </td>
+
+                                                {/* JOB */}
+
+                                                <td>
+
+                                                    <div className="users-job">
+
+                                                        <BriefcaseBusiness
+                                                            size={13}
+                                                        />
+
+                                                        <span>
+                                                            {user.jobTitle ??
+                                                                "—"}
+                                                        </span>
+
+                                                    </div>
+
+                                                </td>
+
+                                                {/* ROLE */}
+
+                                                <td>
+
+                                                    <span
+                                                        className={`users-role role-${user.role.toLowerCase()}`}
+                                                    >
+                                                        <ShieldCheck
+                                                            size={12}
+                                                        />
+
+                                                        {formatRole(
+                                                            user.role
+                                                        )}
+                                                    </span>
+
+                                                </td>
+
+                                                {/* DEPARTMENT */}
+
+                                                <td>
+
+                                                    {user.department
+                                                        ?.name ? (
+                                                        <span className="users-department">
+
+                                                            <Building2
+                                                                size={12}
+                                                            />
+
+                                                            {
+                                                                user
+                                                                    .department
+                                                                    .name
+                                                            }
+
+                                                        </span>
+                                                    ) : (
+                                                        <span className="users-muted">
+                                                            —
+                                                        </span>
+                                                    )}
+
+                                                </td>
+
+                                                {/* STATUS */}
+
+                                                <td>
+
+                                                    <span
+                                                        className={`users-status ${user.isActive
+                                                                ? "active"
+                                                                : "inactive"
+                                                            }`}
+                                                    >
+                                                        <span />
+
+                                                        {user.isActive
+                                                            ? "Active"
+                                                            : "Inactive"}
+                                                    </span>
+
+                                                </td>
+
+                                                {/* ACTION */}
+
+                                                <td>
+
+                                                    <button
+                                                        type="button"
+                                                        className="users-manage-button"
+                                                        onClick={() =>
+                                                            navigate(
+                                                                `/users/${user.id}`
+                                                            )
+                                                        }
+                                                    >
+                                                        <UserCog
+                                                            size={13}
+                                                        />
+
+                                                        Manage
+
+                                                        <ChevronRight
+                                                            size={13}
+                                                        />
+                                                    </button>
+
+                                                </td>
+
+                                            </tr>
+                                        );
+                                    }
+                                )}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                )}
+
+            </section>
 
         </div>
     );

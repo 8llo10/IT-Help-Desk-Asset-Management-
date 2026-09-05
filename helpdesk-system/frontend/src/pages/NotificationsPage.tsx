@@ -10,6 +10,9 @@ import {
     CheckCircle2,
     CircleAlert,
     Info,
+    Inbox,
+    MailOpen,
+    Sparkles,
     TicketCheck,
     UserCheck,
     Wrench,
@@ -20,6 +23,8 @@ import type {
 } from "lucide-react";
 
 import api from "../api/client";
+
+import "../styles/NotificationsPage.css";
 
 type NotificationType =
     | "TICKET_ASSIGNED"
@@ -62,6 +67,7 @@ interface Notification {
 interface NotificationMeta {
     icon: LucideIcon;
     label: string;
+    tone: string;
 }
 
 /* =========================================================
@@ -76,42 +82,49 @@ const getNotificationMeta = (
             return {
                 icon: UserCheck,
                 label: "Ticket Assignment",
+                tone: "assignment",
             };
 
         case "TICKET_REPLY":
             return {
                 icon: BellRing,
                 label: "Ticket Reply",
+                tone: "reply",
             };
 
         case "TICKET_STATUS_CHANGED":
             return {
                 icon: TicketCheck,
                 label: "Ticket Update",
+                tone: "ticket",
             };
 
         case "ASSET_ASSIGNED":
             return {
                 icon: Wrench,
                 label: "Asset Assigned",
+                tone: "asset",
             };
 
         case "ASSET_UNASSIGNED":
             return {
                 icon: CircleAlert,
                 label: "Asset Unassigned",
+                tone: "warning",
             };
 
         case "ASSET_TRANSFERRED":
             return {
                 icon: Wrench,
                 label: "Asset Transfer",
+                tone: "asset",
             };
 
         default:
             return {
                 icon: Info,
                 label: "Notification",
+                tone: "default",
             };
     }
 };
@@ -165,7 +178,7 @@ export default function NotificationsPage() {
         >("ALL");
 
     /* =========================================================
-       LOAD NOTIFICATIONS
+       LOAD
        ========================================================= */
 
     useEffect(() => {
@@ -191,7 +204,9 @@ export default function NotificationsPage() {
                             ? data
                             : []
                     );
-                } catch (error: any) {
+                } catch (
+                error: any
+                ) {
                     setError(
                         error.response?.data
                             ?.message ??
@@ -262,12 +277,23 @@ export default function NotificationsPage() {
 
     if (loading) {
         return (
-            <div>
-                <Bell />
+            <div className="notifications-loading">
+
+                <div className="notifications-loading-icon">
+                    <BellRing
+                        size={25}
+                    />
+                </div>
+
+                <strong>
+                    Loading notifications
+                </strong>
 
                 <p>
-                    Loading notifications...
+                    Gathering your latest
+                    WASL activity...
                 </p>
+
             </div>
         );
     }
@@ -279,62 +305,100 @@ export default function NotificationsPage() {
     return (
         <div className="notifications-page">
 
-            {/* HEADER */}
+            {/* =====================================================
+          HERO
+          ===================================================== */}
 
-            <section className="notifications-header">
-                <div>
-                    <p>
-                        WASL Notification Center
-                    </p>
+            <section className="notifications-hero">
+
+                <div className="notifications-hero-copy">
+
+                    <div className="notifications-eyebrow">
+                        <span />
+                        WASL ACTIVITY CENTER
+                    </div>
 
                     <h1>
                         Notifications
                     </h1>
 
                     <p>
-                        Stay updated on ticket
-                        activity, assignments and
-                        asset changes.
+                        Stay informed about ticket
+                        activity, assignments,
+                        replies and asset updates
+                        across your workspace.
                     </p>
+
                 </div>
 
-                <div>
-                    <BellRing
-                        size={22}
+                <div className="notifications-hero-status">
+
+                    <div className="notifications-hero-bell">
+                        <BellRing
+                            size={23}
+                        />
+
+                        {unreadCount > 0 && (
+                            <span>
+                                {unreadCount}
+                            </span>
+                        )}
+                    </div>
+
+                    <div>
+
+                        <span>
+                            Inbox Status
+                        </span>
+
+                        <strong>
+                            {unreadCount > 0
+                                ? `${unreadCount} unread`
+                                : "All caught up"}
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            {/* =====================================================
+          ERROR
+          ===================================================== */}
+
+            {error && (
+                <div className="notifications-alert">
+
+                    <CircleAlert
+                        size={16}
                     />
 
                     <span>
-                        {unreadCount} unread
-                    </span>
-                </div>
-            </section>
-
-            {/* ERROR */}
-
-            {error && (
-                <div>
-                    <CircleAlert
-                        size={18}
-                    />
-
-                    <p>
                         {error}
-                    </p>
+                    </span>
+
                 </div>
             )}
 
-            {/* SUMMARY */}
+            {/* =====================================================
+          SUMMARY
+          ===================================================== */}
 
             <section className="notifications-summary">
 
-                <article>
-                    <Bell
-                        size={20}
-                    />
+                <article className="notifications-summary-card">
+
+                    <div className="notifications-summary-icon">
+                        <Bell
+                            size={18}
+                        />
+                    </div>
 
                     <div>
+
                         <span>
-                            Total
+                            Total Activity
                         </span>
 
                         <strong>
@@ -342,15 +406,25 @@ export default function NotificationsPage() {
                                 notifications.length
                             }
                         </strong>
+
+                        <small>
+                            All notifications
+                        </small>
+
                     </div>
+
                 </article>
 
-                <article>
-                    <BellRing
-                        size={20}
-                    />
+                <article className="notifications-summary-card notifications-summary-unread">
+
+                    <div className="notifications-summary-icon">
+                        <BellRing
+                            size={18}
+                        />
+                    </div>
 
                     <div>
+
                         <span>
                             Unread
                         </span>
@@ -358,15 +432,25 @@ export default function NotificationsPage() {
                         <strong>
                             {unreadCount}
                         </strong>
+
+                        <small>
+                            Needs attention
+                        </small>
+
                     </div>
+
                 </article>
 
-                <article>
-                    <CheckCircle2
-                        size={20}
-                    />
+                <article className="notifications-summary-card notifications-summary-read">
+
+                    <div className="notifications-summary-icon">
+                        <CheckCircle2
+                            size={18}
+                        />
+                    </div>
 
                     <div>
+
                         <span>
                             Read
                         </span>
@@ -374,223 +458,397 @@ export default function NotificationsPage() {
                         <strong>
                             {readCount}
                         </strong>
+
+                        <small>
+                            Previously viewed
+                        </small>
+
                     </div>
+
                 </article>
 
             </section>
 
-            {/* FILTERS */}
+            {/* =====================================================
+          INBOX
+          ===================================================== */}
 
-            <section className="notifications-filters">
+            <section className="notifications-inbox">
 
-                <button
-                    type="button"
-                    onClick={() =>
-                        setFilter("ALL")
-                    }
-                    aria-pressed={
-                        filter === "ALL"
-                    }
-                >
-                    All
-                    {" "}
-                    ({notifications.length})
-                </button>
+                {/* HEADER */}
 
-                <button
-                    type="button"
-                    onClick={() =>
-                        setFilter("UNREAD")
-                    }
-                    aria-pressed={
-                        filter === "UNREAD"
-                    }
-                >
-                    Unread
-                    {" "}
-                    ({unreadCount})
-                </button>
+                <div className="notifications-inbox-header">
 
-                <button
-                    type="button"
-                    onClick={() =>
-                        setFilter("READ")
-                    }
-                    aria-pressed={
-                        filter === "READ"
-                    }
-                >
-                    Read
-                    {" "}
-                    ({readCount})
-                </button>
+                    <div>
 
-            </section>
-
-            {/* NOTIFICATION LIST */}
-
-            <section className="notifications-list">
-
-                {filteredNotifications.length ===
-                    0 ? (
-                    <div className="notifications-empty">
-                        <Bell
-                            size={34}
-                        />
+                        <span className="notifications-section-label">
+                            ACTIVITY INBOX
+                        </span>
 
                         <h2>
-                            No notifications
+                            Recent Updates
                         </h2>
 
                         <p>
-                            {filter === "UNREAD"
-                                ? "You're all caught up."
-                                : "There are no notifications to display."}
+                            Review system activity
+                            associated with your account.
                         </p>
+
                     </div>
-                ) : (
-                    filteredNotifications.map(
-                        (notification) => {
-                            const meta =
-                                getNotificationMeta(
-                                    notification.type
-                                );
 
-                            const Icon =
-                                meta.icon;
+                    <div className="notifications-inbox-count">
+                        <Inbox
+                            size={15}
+                        />
 
-                            const isRead =
-                                notification.isRead ||
-                                Boolean(
-                                    notification.readAt
-                                );
+                        {
+                            filteredNotifications.length
+                        }{" "}
+                        items
+                    </div>
 
-                            return (
-                                <article
-                                    key={
-                                        notification.id
-                                    }
-                                    className={
-                                        isRead
-                                            ? "notification-item"
-                                            : "notification-item notification-unread"
-                                    }
-                                >
+                </div>
 
-                                    {/* ICON */}
+                {/* FILTERS */}
 
-                                    <div className="notification-icon">
-                                        <Icon
-                                            size={20}
-                                        />
-                                    </div>
+                <div className="notifications-toolbar">
 
-                                    {/* CONTENT */}
+                    <div className="notifications-filters">
 
-                                    <div className="notification-content">
+                        <button
+                            type="button"
+                            className={
+                                filter === "ALL"
+                                    ? "active"
+                                    : ""
+                            }
+                            onClick={() =>
+                                setFilter(
+                                    "ALL"
+                                )
+                            }
+                            aria-pressed={
+                                filter === "ALL"
+                            }
+                        >
+                            <Bell
+                                size={14}
+                            />
 
-                                        <div className="notification-top">
+                            All
 
-                                            <div>
-                                                <span className="notification-type">
-                                                    {
-                                                        meta.label
-                                                    }
-                                                </span>
+                            <span>
+                                {
+                                    notifications.length
+                                }
+                            </span>
+                        </button>
 
-                                                {!isRead && (
-                                                    <span className="notification-new">
-                                                        New
-                                                    </span>
-                                                )}
+                        <button
+                            type="button"
+                            className={
+                                filter === "UNREAD"
+                                    ? "active"
+                                    : ""
+                            }
+                            onClick={() =>
+                                setFilter(
+                                    "UNREAD"
+                                )
+                            }
+                            aria-pressed={
+                                filter === "UNREAD"
+                            }
+                        >
+                            <BellRing
+                                size={14}
+                            />
+
+                            Unread
+
+                            <span>
+                                {unreadCount}
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
+                            className={
+                                filter === "READ"
+                                    ? "active"
+                                    : ""
+                            }
+                            onClick={() =>
+                                setFilter(
+                                    "READ"
+                                )
+                            }
+                            aria-pressed={
+                                filter === "READ"
+                            }
+                        >
+                            <MailOpen
+                                size={14}
+                            />
+
+                            Read
+
+                            <span>
+                                {readCount}
+                            </span>
+                        </button>
+
+                    </div>
+
+                    <div className="notifications-toolbar-note">
+
+                        <Sparkles
+                            size={14}
+                        />
+
+                        Live system activity
+                    </div>
+
+                </div>
+
+                {/* ===================================================
+            LIST
+            =================================================== */}
+
+                <div className="notifications-list">
+
+                    {filteredNotifications.length ===
+                        0 ? (
+                        <div className="notifications-empty">
+
+                            <div className="notifications-empty-icon">
+                                <Bell
+                                    size={26}
+                                />
+                            </div>
+
+                            <h2>
+                                {filter === "UNREAD"
+                                    ? "You're all caught up"
+                                    : "No notifications"}
+                            </h2>
+
+                            <p>
+                                {filter === "UNREAD"
+                                    ? "There are no unread notifications requiring your attention."
+                                    : "There are no notifications to display in this view."}
+                            </p>
+
+                        </div>
+                    ) : (
+                        filteredNotifications.map(
+                            (notification) => {
+                                const meta =
+                                    getNotificationMeta(
+                                        notification.type
+                                    );
+
+                                const Icon =
+                                    meta.icon;
+
+                                const isRead =
+                                    notification.isRead ||
+                                    Boolean(
+                                        notification.readAt
+                                    );
+
+                                return (
+                                    <article
+                                        key={
+                                            notification.id
+                                        }
+                                        className={`notification-item ${isRead
+                                                ? "notification-read"
+                                                : "notification-unread"
+                                            } notification-tone-${meta.tone}`}
+                                    >
+
+                                        {/* ICON */}
+
+                                        <div className="notification-icon-wrap">
+
+                                            <div className="notification-icon">
+                                                <Icon
+                                                    size={19}
+                                                />
                                             </div>
 
-                                            <time
-                                                dateTime={
-                                                    notification.createdAt
-                                                }
-                                            >
-                                                {formatDate(
-                                                    notification.createdAt
-                                                )}
-                                            </time>
+                                            {!isRead && (
+                                                <span className="notification-unread-dot" />
+                                            )}
 
                                         </div>
 
-                                        <h3>
-                                            {notification.title ??
-                                                meta.label}
-                                        </h3>
+                                        {/* CONTENT */}
 
-                                        <p>
-                                            {
-                                                notification.message
-                                            }
-                                        </p>
+                                        <div className="notification-content">
 
-                                        {/* RELATED TICKET */}
+                                            <div className="notification-top">
 
-                                        {notification.ticket && (
-                                            <div>
-                                                <TicketCheck
-                                                    size={15}
-                                                />
+                                                <div className="notification-labels">
 
-                                                <span>
-                                                    {
-                                                        notification.ticket
-                                                            .ticketNumber
-                                                    }
-                                                </span>
+                                                    <span className="notification-type">
+                                                        {
+                                                            meta.label
+                                                        }
+                                                    </span>
 
-                                                {notification.ticket
-                                                    .title && (
-                                                        <span>
-                                                            {" — "}
-                                                            {
-                                                                notification.ticket
-                                                                    .title
-                                                            }
+                                                    {!isRead && (
+                                                        <span className="notification-new">
+                                                            New
                                                         </span>
                                                     )}
-                                            </div>
-                                        )}
 
-                                        {/* RELATED ASSET */}
+                                                </div>
 
-                                        {notification.asset && (
-                                            <div>
-                                                <Wrench
-                                                    size={15}
-                                                />
-
-                                                <span>
-                                                    {
-                                                        notification.asset
-                                                            .assetTag
+                                                <time
+                                                    dateTime={
+                                                        notification.createdAt
                                                     }
-                                                </span>
-
-                                                {notification.asset
-                                                    .type && (
-                                                        <span>
-                                                            {" — "}
-                                                            {
-                                                                notification.asset
-                                                                    .type
-                                                            }
-                                                        </span>
+                                                >
+                                                    {formatDate(
+                                                        notification.createdAt
                                                     )}
+                                                </time>
+
                                             </div>
-                                        )}
 
-                                    </div>
+                                            <h3>
+                                                {notification.title ??
+                                                    meta.label}
+                                            </h3>
 
-                                </article>
-                            );
-                        }
-                    )
-                )}
+                                            <p className="notification-message">
+                                                {
+                                                    notification.message
+                                                }
+                                            </p>
+
+                                            {/* RELATED */}
+
+                                            {(notification.ticket ||
+                                                notification.asset) && (
+                                                    <div className="notification-related">
+
+                                                        {notification.ticket && (
+                                                            <div className="notification-related-item">
+
+                                                                <div className="notification-related-icon">
+                                                                    <TicketCheck
+                                                                        size={14}
+                                                                    />
+                                                                </div>
+
+                                                                <div>
+
+                                                                    <span>
+                                                                        Related Ticket
+                                                                    </span>
+
+                                                                    <strong>
+                                                                        {
+                                                                            notification.ticket
+                                                                                .ticketNumber
+                                                                        }
+                                                                    </strong>
+
+                                                                    {notification.ticket
+                                                                        .title && (
+                                                                            <p>
+                                                                                {
+                                                                                    notification.ticket
+                                                                                        .title
+                                                                                }
+                                                                            </p>
+                                                                        )}
+
+                                                                </div>
+
+                                                            </div>
+                                                        )}
+
+                                                        {notification.asset && (
+                                                            <div className="notification-related-item">
+
+                                                                <div className="notification-related-icon">
+                                                                    <Wrench
+                                                                        size={14}
+                                                                    />
+                                                                </div>
+
+                                                                <div>
+
+                                                                    <span>
+                                                                        Related Asset
+                                                                    </span>
+
+                                                                    <strong>
+                                                                        {
+                                                                            notification.asset
+                                                                                .assetTag
+                                                                        }
+                                                                    </strong>
+
+                                                                    {notification.asset
+                                                                        .type && (
+                                                                            <p>
+                                                                                {
+                                                                                    notification.asset
+                                                                                        .type
+                                                                                }
+                                                                            </p>
+                                                                        )}
+
+                                                                </div>
+
+                                                            </div>
+                                                        )}
+
+                                                    </div>
+                                                )}
+
+                                        </div>
+
+                                        {/* READ INDICATOR */}
+
+                                        <div className="notification-state">
+
+                                            {isRead ? (
+                                                <>
+                                                    <CheckCircle2
+                                                        size={14}
+                                                    />
+
+                                                    <span>
+                                                        Read
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <BellRing
+                                                        size={14}
+                                                    />
+
+                                                    <span>
+                                                        Unread
+                                                    </span>
+                                                </>
+                                            )}
+
+                                        </div>
+
+                                    </article>
+                                );
+                            }
+                        )
+                    )}
+
+                </div>
 
             </section>
 

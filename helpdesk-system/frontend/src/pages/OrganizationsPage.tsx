@@ -1,9 +1,28 @@
 import {
     useEffect,
+    useMemo,
     useState,
 } from "react";
 
+import type {
+    FormEvent,
+} from "react";
+
+import {
+    Building2,
+    CheckCircle2,
+    CircleDot,
+    Hash,
+    Network,
+    Plus,
+    Search,
+    Sparkles,
+    X,
+} from "lucide-react";
+
 import api from "../api/client";
+
+import "../styles/OrganizationsPage.css";
 
 interface Organization {
     id: number;
@@ -13,268 +32,784 @@ interface Organization {
 }
 
 export default function OrganizationsPage() {
-    const [organizations, setOrganizations] =
+    const [
+        organizations,
+        setOrganizations,
+    ] =
         useState<Organization[]>([]);
 
-    const [name, setName] =
+    const [
+        name,
+        setName,
+    ] =
         useState("");
 
-    const [code, setCode] =
+    const [
+        code,
+        setCode,
+    ] =
         useState("");
 
-    const [loading, setLoading] =
+    const [
+        search,
+        setSearch,
+    ] =
+        useState("");
+
+    const [
+        loading,
+        setLoading,
+    ] =
         useState(true);
 
-    const [saving, setSaving] =
+    const [
+        saving,
+        setSaving,
+    ] =
         useState(false);
 
-    const [error, setError] =
+    const [
+        error,
+        setError,
+    ] =
         useState("");
 
-    const [message, setMessage] =
+    const [
+        message,
+        setMessage,
+    ] =
         useState("");
 
-    const fetchOrganizations = async () => {
-        try {
-            setError("");
+    /* =========================================================
+       LOAD ORGANIZATIONS
+       ========================================================= */
 
-            const response =
-                await api.get("/organizations");
+    const fetchOrganizations =
+        async () => {
+            try {
+                setError("");
 
-            const data =
-                response.data?.data?.organizations ??
-                response.data?.data ??
-                [];
+                const response =
+                    await api.get(
+                        "/organizations"
+                    );
 
-            setOrganizations(
-                Array.isArray(data)
-                    ? data
-                    : []
-            );
-        } catch (error: any) {
-            setError(
-                error.response?.data?.message ??
-                "Failed to load organizations"
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
+                const data =
+                    response.data?.data
+                        ?.organizations ??
+                    response.data?.data ??
+                    [];
+
+                setOrganizations(
+                    Array.isArray(data)
+                        ? data
+                        : []
+                );
+            } catch (
+            error: any
+            ) {
+                setError(
+                    error.response?.data
+                        ?.message ??
+                    "Failed to load organizations"
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
 
     useEffect(() => {
         void fetchOrganizations();
     }, []);
 
-    const handleSubmit = async (
-        event: React.FormEvent
-    ) => {
-        event.preventDefault();
+    /* =========================================================
+       CREATE
+       ========================================================= */
 
-        const trimmedName =
-            name.trim();
+    const handleSubmit =
+        async (
+            event: FormEvent
+        ) => {
+            event.preventDefault();
 
-        if (!trimmedName) {
-            setError(
-                "Organization name is required."
+            const trimmedName =
+                name.trim();
+
+            if (!trimmedName) {
+                setError(
+                    "Organization name is required."
+                );
+
+                return;
+            }
+
+            try {
+                setSaving(true);
+
+                setError("");
+                setMessage("");
+
+                await api.post(
+                    "/organizations",
+                    {
+                        name:
+                            trimmedName,
+
+                        ...(code.trim()
+                            ? {
+                                code:
+                                    code
+                                        .trim()
+                                        .toUpperCase(),
+                            }
+                            : {}),
+                    }
+                );
+
+                setName("");
+                setCode("");
+
+                setMessage(
+                    "Organization created successfully."
+                );
+
+                await fetchOrganizations();
+            } catch (
+            error: any
+            ) {
+                setError(
+                    error.response?.data
+                        ?.message ??
+                    "Failed to create organization"
+                );
+            } finally {
+                setSaving(false);
+            }
+        };
+
+    /* =========================================================
+       SEARCH
+       ========================================================= */
+
+    const filteredOrganizations =
+        useMemo(() => {
+            const query =
+                search
+                    .trim()
+                    .toLowerCase();
+
+            if (!query) {
+                return organizations;
+            }
+
+            return organizations.filter(
+                (organization) =>
+                    organization.name
+                        .toLowerCase()
+                        .includes(query) ||
+                    organization.code
+                        ?.toLowerCase()
+                        .includes(query) ||
+                    String(
+                        organization.id
+                    ).includes(query)
             );
+        }, [
+            organizations,
+            search,
+        ]);
 
-            return;
-        }
+    /* =========================================================
+       COUNTS
+       ========================================================= */
 
-        try {
-            setSaving(true);
-            setError("");
-            setMessage("");
+    const activeOrganizations =
+        useMemo(() => {
+            return organizations.filter(
+                (organization) =>
+                    organization.isActive !==
+                    false
+            ).length;
+        }, [organizations]);
 
-            await api.post(
-                "/organizations",
-                {
-                    name: trimmedName,
-
-                    ...(code.trim()
-                        ? {
-                            code:
-                                code
-                                    .trim()
-                                    .toUpperCase(),
-                        }
-                        : {}),
-                }
-            );
-
-            setName("");
-            setCode("");
-
-            setMessage(
-                "Organization created successfully."
-            );
-
-            await fetchOrganizations();
-        } catch (error: any) {
-            setError(
-                error.response?.data?.message ??
-                "Failed to create organization"
-            );
-        } finally {
-            setSaving(false);
-        }
-    };
+    /* =========================================================
+       LOADING
+       ========================================================= */
 
     if (loading) {
         return (
-            <p>
-                Loading organizations...
-            </p>
+            <div className="organizations-loading">
+
+                <div className="organizations-loading-icon">
+                    <Building2
+                        size={25}
+                    />
+                </div>
+
+                <strong>
+                    Loading organizations
+                </strong>
+
+                <p>
+                    Preparing organization
+                    structure...
+                </p>
+
+            </div>
         );
     }
 
+    /* =========================================================
+       PAGE
+       ========================================================= */
+
     return (
-        <div>
-            <div>
-                <h1>
-                    Organizations
-                </h1>
+        <div className="organizations-page">
 
-                <p>
-                    Manage organizations
-                    registered in WASL.
-                </p>
+            {/* =====================================================
+          HERO
+          ===================================================== */}
 
-                <p>
-                    Total:{" "}
-                    {organizations.length}
-                </p>
-            </div>
+            <section className="organizations-hero">
+
+                <div className="organizations-hero-copy">
+
+                    <div className="organizations-eyebrow">
+                        <span />
+                        ORGANIZATION STRUCTURE
+                    </div>
+
+                    <h1>
+                        Organizations
+                    </h1>
+
+                    <p>
+                        Manage top-level organizations
+                        registered in WASL and maintain
+                        the structure used by branches,
+                        locations and IT operations.
+                    </p>
+
+                </div>
+
+                <div className="organizations-hero-stats">
+
+                    <div className="organizations-hero-stat">
+
+                        <div className="organizations-hero-stat-icon">
+                            <Building2
+                                size={20}
+                            />
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Organizations
+                            </span>
+
+                            <strong>
+                                {
+                                    organizations.length
+                                }
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                    <div className="organizations-hero-stat">
+
+                        <div className="organizations-hero-stat-icon organizations-hero-stat-icon-green">
+                            <CircleDot
+                                size={20}
+                            />
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Active
+                            </span>
+
+                            <strong>
+                                {
+                                    activeOrganizations
+                                }
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            {/* =====================================================
+          ALERTS
+          ===================================================== */}
 
             {error && (
-                <p>{error}</p>
+                <div className="organizations-alert organizations-alert-error">
+
+                    <X
+                        size={16}
+                    />
+
+                    <span>
+                        {error}
+                    </span>
+
+                </div>
             )}
 
             {message && (
-                <p>{message}</p>
+                <div className="organizations-alert organizations-alert-success">
+
+                    <CheckCircle2
+                        size={16}
+                    />
+
+                    <span>
+                        {message}
+                    </span>
+
+                </div>
             )}
 
-            <form
-                onSubmit={
-                    handleSubmit
-                }
-            >
-                <div>
-                    <label>
-                        Organization Name
-                    </label>
+            {/* =====================================================
+          WORKSPACE
+          ===================================================== */}
 
-                    <input
-                        type="text"
-                        value={name}
-                        placeholder="WASL Company"
-                        disabled={saving}
-                        onChange={(event) =>
-                            setName(
-                                event.target.value
-                            )
+            <section className="organizations-workspace">
+
+                {/* ===================================================
+            CREATE
+            =================================================== */}
+
+                <article className="organizations-create-card">
+
+                    <div className="organizations-card-heading">
+
+                        <div className="organizations-heading-icon">
+                            <Plus
+                                size={18}
+                            />
+                        </div>
+
+                        <div>
+
+                            <span>
+                                NEW ORGANIZATION
+                            </span>
+
+                            <h2>
+                                Register Organization
+                            </h2>
+
+                            <p>
+                                Add a new top-level
+                                organization to WASL.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <form
+                        className="organizations-create-form"
+                        onSubmit={
+                            handleSubmit
                         }
-                    />
-                </div>
+                    >
 
-                <div>
-                    <label>
-                        Code
-                    </label>
+                        {/* NAME */}
 
-                    <input
-                        type="text"
-                        value={code}
-                        placeholder="WASL"
-                        disabled={saving}
-                        onChange={(event) =>
-                            setCode(
-                                event.target.value
-                            )
-                        }
-                    />
-                </div>
+                        <div className="organizations-field">
 
-                <button
-                    type="submit"
-                    disabled={
-                        saving ||
-                        !name.trim()
-                    }
-                >
-                    {saving
-                        ? "Saving..."
-                        : "Add Organization"}
-                </button>
-            </form>
+                            <label
+                                htmlFor="organization-name"
+                            >
+                                Organization Name
+                                <b>*</b>
+                            </label>
 
-            <hr />
+                            <div className="organizations-input-shell">
 
-            {organizations.length === 0 ? (
-                <p>
-                    No organizations found.
-                </p>
-            ) : (
-                <table>
-                    <thead>
-                        <tr>
-                            <th>
-                                ID
-                            </th>
+                                <Building2
+                                    size={16}
+                                />
 
-                            <th>
-                                Organization
-                            </th>
+                                <input
+                                    id="organization-name"
+                                    type="text"
+                                    value={
+                                        name
+                                    }
+                                    placeholder="e.g. WASL Company"
+                                    disabled={
+                                        saving
+                                    }
+                                    required
+                                    onChange={(
+                                        event
+                                    ) => {
+                                        setName(
+                                            event.target.value
+                                        );
 
-                            <th>
-                                Code
-                            </th>
+                                        setError("");
+                                        setMessage("");
+                                    }}
+                                />
 
-                            <th>
-                                Status
-                            </th>
-                        </tr>
-                    </thead>
+                            </div>
 
-                    <tbody>
-                        {organizations.map(
-                            (organization) => (
-                                <tr
-                                    key={
-                                        organization.id
+                        </div>
+
+                        {/* CODE */}
+
+                        <div className="organizations-field">
+
+                            <label
+                                htmlFor="organization-code"
+                            >
+                                Organization Code
+                            </label>
+
+                            <div className="organizations-input-shell">
+
+                                <Hash
+                                    size={16}
+                                />
+
+                                <input
+                                    id="organization-code"
+                                    type="text"
+                                    value={
+                                        code
+                                    }
+                                    placeholder="e.g. WASL"
+                                    disabled={
+                                        saving
+                                    }
+                                    onChange={(
+                                        event
+                                    ) => {
+                                        setCode(
+                                            event.target.value
+                                        );
+
+                                        setError("");
+                                        setMessage("");
+                                    }}
+                                />
+
+                            </div>
+
+                            <small>
+                                Optional. The code will be
+                                stored in uppercase.
+                            </small>
+
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="organizations-create-button"
+                            disabled={
+                                saving ||
+                                !name.trim()
+                            }
+                        >
+                            {saving ? (
+                                <>
+                                    <span className="organizations-spinner" />
+
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Plus
+                                        size={16}
+                                    />
+
+                                    Add Organization
+                                </>
+                            )}
+                        </button>
+
+                    </form>
+
+                    <div className="organizations-note">
+
+                        <Sparkles
+                            size={15}
+                        />
+
+                        <span>
+                            Organizations form the top
+                            layer of the WASL company
+                            structure.
+                        </span>
+
+                    </div>
+
+                </article>
+
+                {/* ===================================================
+            DIRECTORY
+            =================================================== */}
+
+                <article className="organizations-directory">
+
+                    <div className="organizations-directory-header">
+
+                        <div>
+
+                            <span className="organizations-section-label">
+                                ORGANIZATION DIRECTORY
+                            </span>
+
+                            <h2>
+                                Registered Organizations
+                            </h2>
+
+                            <p>
+                                Browse organizations currently
+                                available in the system.
+                            </p>
+
+                        </div>
+
+                        <div className="organizations-count-chip">
+                            {
+                                organizations.length
+                            }{" "}
+                            organizations
+                        </div>
+
+                    </div>
+
+                    {/* TOOLBAR */}
+
+                    <div className="organizations-toolbar">
+
+                        <div className="organizations-search">
+
+                            <Search
+                                size={16}
+                            />
+
+                            <input
+                                type="search"
+                                value={
+                                    search
+                                }
+                                placeholder="Search organization or code..."
+                                onChange={(
+                                    event
+                                ) =>
+                                    setSearch(
+                                        event.target.value
+                                    )
+                                }
+                            />
+
+                            {search && (
+                                <button
+                                    type="button"
+                                    aria-label="Clear search"
+                                    onClick={() =>
+                                        setSearch("")
                                     }
                                 >
-                                    <td>
-                                        {
-                                            organization.id
-                                        }
-                                    </td>
+                                    <X
+                                        size={14}
+                                    />
+                                </button>
+                            )}
 
-                                    <td>
-                                        {
-                                            organization.name
-                                        }
-                                    </td>
+                        </div>
 
-                                    <td>
-                                        {
-                                            organization.code ??
-                                            "—"
-                                        }
-                                    </td>
+                        <div className="organizations-toolbar-note">
 
-                                    <td>
-                                        {organization.isActive ===
-                                            false
-                                            ? "Inactive"
-                                            : "Active"}
-                                    </td>
-                                </tr>
-                            )
-                        )}
-                    </tbody>
-                </table>
-            )}
+                            <Network
+                                size={15}
+                            />
+
+                            Top-level entities
+                        </div>
+
+                    </div>
+
+                    {/* EMPTY */}
+
+                    {filteredOrganizations.length ===
+                        0 ? (
+                        <div className="organizations-empty">
+
+                            <div className="organizations-empty-icon">
+                                <Building2
+                                    size={25}
+                                />
+                            </div>
+
+                            <strong>
+                                {search
+                                    ? "No matching organizations"
+                                    : "No organizations yet"}
+                            </strong>
+
+                            <p>
+                                {search
+                                    ? "Try another organization name or code."
+                                    : "Register the first organization using the form."}
+                            </p>
+
+                        </div>
+                    ) : (
+                        <div className="organizations-table-wrap">
+
+                            <table className="organizations-table">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th>
+                                            Organization
+                                        </th>
+
+                                        <th>
+                                            Code
+                                        </th>
+
+                                        <th>
+                                            Organization ID
+                                        </th>
+
+                                        <th>
+                                            Status
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                    {filteredOrganizations.map(
+                                        (
+                                            organization
+                                        ) => (
+                                            <tr
+                                                key={
+                                                    organization.id
+                                                }
+                                            >
+
+                                                {/* ORGANIZATION */}
+
+                                                <td>
+
+                                                    <div className="organizations-name-cell">
+
+                                                        <div className="organizations-row-icon">
+                                                            <Building2
+                                                                size={17}
+                                                            />
+                                                        </div>
+
+                                                        <div>
+
+                                                            <strong>
+                                                                {
+                                                                    organization.name
+                                                                }
+                                                            </strong>
+
+                                                            <span>
+                                                                Organization
+                                                            </span>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </td>
+
+                                                {/* CODE */}
+
+                                                <td>
+
+                                                    {organization.code ? (
+                                                        <span className="organizations-code">
+                                                            {
+                                                                organization.code
+                                                            }
+                                                        </span>
+                                                    ) : (
+                                                        <span className="organizations-muted">
+                                                            —
+                                                        </span>
+                                                    )}
+
+                                                </td>
+
+                                                {/* ID */}
+
+                                                <td>
+
+                                                    <span className="organizations-id">
+                                                        ORG-
+                                                        {String(
+                                                            organization.id
+                                                        ).padStart(
+                                                            3,
+                                                            "0"
+                                                        )}
+                                                    </span>
+
+                                                </td>
+
+                                                {/* STATUS */}
+
+                                                <td>
+
+                                                    <span
+                                                        className={`organizations-status ${organization.isActive ===
+                                                                false
+                                                                ? "inactive"
+                                                                : "active"
+                                                            }`}
+                                                    >
+                                                        <span />
+
+                                                        {organization.isActive ===
+                                                            false
+                                                            ? "Inactive"
+                                                            : "Active"}
+                                                    </span>
+
+                                                </td>
+
+                                            </tr>
+                                        )
+                                    )}
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+                    )}
+
+                </article>
+
+            </section>
+
         </div>
     );
 }

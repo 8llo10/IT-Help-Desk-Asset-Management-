@@ -1,5 +1,6 @@
 import {
     useEffect,
+    useMemo,
     useState,
 } from "react";
 
@@ -9,8 +10,24 @@ import {
 } from "react-router-dom";
 
 import {
+    ArrowLeft,
+    Building2,
+    CheckCircle2,
+    Fingerprint,
+    Globe2,
+    KeyRound,
+    Search,
+    ShieldCheck,
+    Sparkles,
+    UserRound,
+    X,
+} from "lucide-react";
+
+import {
     getRole,
 } from "../api/roles.api";
+
+import "../styles/RoleDetailsPage.css";
 
 interface Permission {
     id: number;
@@ -28,9 +45,7 @@ interface Role {
     id: number;
     name: string;
     code: string;
-
     description?: string | null;
-
     organizationId?: number | null;
 
     permissions?: RolePermission[];
@@ -42,32 +57,58 @@ interface Role {
 }
 
 export default function RoleDetailsPage() {
-    const { id } =
+    const {
+        id,
+    } =
         useParams();
 
     const roleId =
         Number(id);
 
-    const [role, setRole] =
-        useState<Role | null>(null);
+    const [
+        role,
+        setRole,
+    ] =
+        useState<Role | null>(
+            null
+        );
 
-    const [loading, setLoading] =
+    const [
+        loading,
+        setLoading,
+    ] =
         useState(true);
 
-    const [error, setError] =
+    const [
+        error,
+        setError,
+    ] =
         useState("");
+
+    const [
+        search,
+        setSearch,
+    ] =
+        useState("");
+
+    /* =========================================================
+       LOAD ROLE
+       ========================================================= */
 
     useEffect(() => {
         const fetchRole =
             async () => {
                 if (
-                    !Number.isFinite(roleId)
+                    !Number.isFinite(
+                        roleId
+                    )
                 ) {
                     setError(
                         "Invalid role ID"
                     );
 
                     setLoading(false);
+
                     return;
                 }
 
@@ -84,8 +125,12 @@ export default function RoleDetailsPage() {
                             ?.role ??
                         response.data?.data;
 
-                    setRole(roleData);
-                } catch (error: any) {
+                    setRole(
+                        roleData
+                    );
+                } catch (
+                error: any
+                ) {
                     setError(
                         error.response?.data
                             ?.message ??
@@ -97,26 +142,102 @@ export default function RoleDetailsPage() {
             };
 
         void fetchRole();
-    }, [roleId]);
+    }, [
+        roleId,
+    ]);
+
+    /* =========================================================
+       FILTER PERMISSIONS
+       ========================================================= */
+
+    const filteredPermissions =
+        useMemo(() => {
+            if (
+                !role?.permissions
+            ) {
+                return [];
+            }
+
+            const query =
+                search
+                    .trim()
+                    .toLowerCase();
+
+            if (!query) {
+                return role.permissions;
+            }
+
+            return role.permissions.filter(
+                (item) =>
+                    item.permission.name
+                        .toLowerCase()
+                        .includes(query) ||
+                    item.permission.code
+                        .toLowerCase()
+                        .includes(query)
+            );
+        }, [
+            role,
+            search,
+        ]);
+
+    /* =========================================================
+       LOADING
+       ========================================================= */
 
     if (loading) {
         return (
-            <p>
-                Loading role...
-            </p>
+            <div className="role-details-loading">
+
+                <div className="role-details-loading-icon">
+                    <ShieldCheck
+                        size={25}
+                    />
+                </div>
+
+                <strong>
+                    Loading role
+                </strong>
+
+                <p>
+                    Retrieving access
+                    configuration...
+                </p>
+
+            </div>
         );
     }
 
+    /* =========================================================
+       NOT FOUND
+       ========================================================= */
+
     if (!role) {
         return (
-            <div>
+            <div className="role-details-not-found">
+
+                <div className="role-details-not-found-icon">
+                    <ShieldCheck
+                        size={26}
+                    />
+                </div>
+
+                <h2>
+                    Role unavailable
+                </h2>
 
                 <p>
                     {error ||
                         "Role not found."}
                 </p>
 
-                <Link to="/roles">
+                <Link
+                    to="/roles"
+                >
+                    <ArrowLeft
+                        size={15}
+                    />
+
                     Back to Roles
                 </Link>
 
@@ -124,122 +245,490 @@ export default function RoleDetailsPage() {
         );
     }
 
+    const permissionCount =
+        role.permissions?.length ??
+        role._count?.permissions ??
+        0;
+
+    const userCount =
+        role._count?.users ??
+        0;
+
+    const scope =
+        role.organizationId
+            ? "Organization"
+            : "Global";
+
     return (
-        <div>
+        <div className="role-details-page">
 
-            <Link to="/roles">
-                ← Roles
-            </Link>
+            {/* =====================================================
+          BACK
+          ===================================================== */}
 
-            <h1>
-                {role.name}
-            </h1>
+            <div className="role-details-topbar">
 
-            <p>
-                {role.description}
-            </p>
+                <Link
+                    to="/roles"
+                    className="role-details-back"
+                >
+                    <ArrowLeft
+                        size={15}
+                    />
 
-            {error && (
-                <p>
-                    {error}
-                </p>
-            )}
+                    Roles
+                </Link>
 
-            <section>
-                <h2>
-                    Role Information
-                </h2>
+                <span>
+                    RBAC / ROLE DETAILS
+                </span>
 
-                <p>
-                    <strong>
-                        ID:
-                    </strong>{" "}
-                    {role.id}
-                </p>
+            </div>
 
-                <p>
-                    <strong>
-                        Code:
-                    </strong>{" "}
-                    {role.code}
-                </p>
+            {/* =====================================================
+          HERO
+          ===================================================== */}
 
-                <p>
-                    <strong>
-                        Scope:
-                    </strong>{" "}
-                    {role.organizationId
-                        ? "Organization"
-                        : "Global"}
-                </p>
+            <section className="role-details-hero">
 
-                <p>
-                    <strong>
-                        Assigned Users:
-                    </strong>{" "}
-                    {role._count?.users ??
-                        0}
-                </p>
+                <div className="role-details-hero-main">
+
+                    <div className="role-details-hero-icon">
+                        <ShieldCheck
+                            size={27}
+                        />
+                    </div>
+
+                    <div>
+
+                        <div className="role-details-eyebrow">
+                            <span />
+
+                            ACCESS CONTROL ROLE
+                        </div>
+
+                        <h1>
+                            {role.name}
+                        </h1>
+
+                        <p>
+                            {role.description ||
+                                "No description has been provided for this role."}
+                        </p>
+
+                        <div className="role-details-hero-badges">
+
+                            <span className="role-details-code-badge">
+                                <Fingerprint
+                                    size={13}
+                                />
+
+                                {role.code}
+                            </span>
+
+                            <span className="role-details-scope-badge">
+
+                                {role.organizationId ? (
+                                    <Building2
+                                        size={13}
+                                    />
+                                ) : (
+                                    <Globe2
+                                        size={13}
+                                    />
+                                )}
+
+                                {scope} Scope
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div className="role-details-hero-metrics">
+
+                    <article>
+
+                        <div>
+                            <UserRound
+                                size={17}
+                            />
+                        </div>
+
+                        <span>
+                            Assigned Users
+                        </span>
+
+                        <strong>
+                            {userCount}
+                        </strong>
+
+                    </article>
+
+                    <article>
+
+                        <div>
+                            <KeyRound
+                                size={17}
+                            />
+                        </div>
+
+                        <span>
+                            Permissions
+                        </span>
+
+                        <strong>
+                            {permissionCount}
+                        </strong>
+
+                    </article>
+
+                </div>
+
             </section>
 
-            <hr />
+            {/* =====================================================
+          ERROR
+          ===================================================== */}
 
-            <section>
+            {error && (
+                <div className="role-details-alert">
 
-                <h2>
-                    Permissions
-                </h2>
+                    <X
+                        size={15}
+                    />
 
-                {!role.permissions ||
-                    role.permissions.length ===
-                    0 ? (
-                    <p>
-                        No permissions assigned.
-                    </p>
-                ) : (
-                    <table>
+                    <span>
+                        {error}
+                    </span>
 
-                        <thead>
-                            <tr>
-                                <th>
-                                    Permission
-                                </th>
+                </div>
+            )}
 
-                                <th>
-                                    Code
-                                </th>
-                            </tr>
-                        </thead>
+            {/* =====================================================
+          CONTENT GRID
+          ===================================================== */}
 
-                        <tbody>
-                            {role.permissions.map(
-                                (item) => (
-                                    <tr
+            <section className="role-details-grid">
+
+                {/* ===================================================
+            ROLE INFO
+            =================================================== */}
+
+                <aside className="role-details-info-card">
+
+                    <div className="role-details-card-header">
+
+                        <div className="role-details-card-icon">
+                            <ShieldCheck
+                                size={18}
+                            />
+                        </div>
+
+                        <div>
+
+                            <span>
+                                ROLE PROFILE
+                            </span>
+
+                            <h2>
+                                Role Information
+                            </h2>
+
+                            <p>
+                                Core RBAC configuration
+                                for this role.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div className="role-details-info-list">
+
+                        {/* ID */}
+
+                        <div className="role-details-info-item">
+
+                            <span>
+                                Role ID
+                            </span>
+
+                            <strong>
+                                ROLE-
+                                {String(
+                                    role.id
+                                ).padStart(
+                                    3,
+                                    "0"
+                                )}
+                            </strong>
+
+                        </div>
+
+                        {/* CODE */}
+
+                        <div className="role-details-info-item">
+
+                            <span>
+                                System Code
+                            </span>
+
+                            <strong className="role-details-system-code">
+                                {role.code}
+                            </strong>
+
+                        </div>
+
+                        {/* SCOPE */}
+
+                        <div className="role-details-info-item">
+
+                            <span>
+                                Scope
+                            </span>
+
+                            <strong>
+                                {scope}
+                            </strong>
+
+                        </div>
+
+                        {/* USERS */}
+
+                        <div className="role-details-info-item">
+
+                            <span>
+                                Assigned Users
+                            </span>
+
+                            <strong>
+                                {userCount}
+                            </strong>
+
+                        </div>
+
+                        {/* PERMISSIONS */}
+
+                        <div className="role-details-info-item">
+
+                            <span>
+                                Permissions
+                            </span>
+
+                            <strong>
+                                {permissionCount}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                    <div className="role-details-security-note">
+
+                        <Sparkles
+                            size={15}
+                        />
+
+                        <div>
+
+                            <strong>
+                                Access configuration
+                            </strong>
+
+                            <p>
+                                Permissions listed here
+                                define capabilities associated
+                                with this system role.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </aside>
+
+                {/* ===================================================
+            PERMISSIONS
+            =================================================== */}
+
+                <article className="role-details-permissions-card">
+
+                    <div className="role-details-permissions-header">
+
+                        <div>
+
+                            <span className="role-details-section-label">
+                                AUTHORIZATION MATRIX
+                            </span>
+
+                            <h2>
+                                Permissions
+                            </h2>
+
+                            <p>
+                                Capabilities currently
+                                attached to this role.
+                            </p>
+
+                        </div>
+
+                        <div className="role-details-permission-count">
+                            <KeyRound
+                                size={14}
+                            />
+
+                            {permissionCount} assigned
+                        </div>
+
+                    </div>
+
+                    {/* SEARCH */}
+
+                    <div className="role-details-toolbar">
+
+                        <div className="role-details-search">
+
+                            <Search
+                                size={15}
+                            />
+
+                            <input
+                                type="search"
+                                placeholder="Search permission or code..."
+                                value={
+                                    search
+                                }
+                                onChange={(
+                                    event
+                                ) =>
+                                    setSearch(
+                                        event.target.value
+                                    )
+                                }
+                            />
+
+                            {search && (
+                                <button
+                                    type="button"
+                                    aria-label="Clear permission search"
+                                    onClick={() =>
+                                        setSearch("")
+                                    }
+                                >
+                                    <X
+                                        size={14}
+                                    />
+                                </button>
+                            )}
+
+                        </div>
+
+                        <div className="role-details-toolbar-state">
+
+                            <CheckCircle2
+                                size={14}
+                            />
+
+                            Current configuration
+                        </div>
+
+                    </div>
+
+                    {/* EMPTY */}
+
+                    {filteredPermissions.length ===
+                        0 ? (
+                        <div className="role-details-empty">
+
+                            <div className="role-details-empty-icon">
+                                <KeyRound
+                                    size={24}
+                                />
+                            </div>
+
+                            <strong>
+                                {search
+                                    ? "No matching permissions"
+                                    : "No permissions assigned"}
+                            </strong>
+
+                            <p>
+                                {search
+                                    ? "Try searching with another permission name or code."
+                                    : "This role currently has no permissions associated with it."}
+                            </p>
+
+                        </div>
+                    ) : (
+                        <div className="role-details-permission-list">
+
+                            {filteredPermissions.map(
+                                (
+                                    item,
+                                    index
+                                ) => (
+                                    <article
+                                        className="role-details-permission-item"
                                         key={
-                                            item.permission
-                                                .id
+                                            item.permission.id
                                         }
                                     >
-                                        <td>
-                                            {
-                                                item.permission
-                                                    .name
-                                            }
-                                        </td>
 
-                                        <td>
-                                            {
-                                                item.permission
-                                                    .code
-                                            }
-                                        </td>
-                                    </tr>
+                                        <div className="role-details-permission-index">
+                                            {String(
+                                                index + 1
+                                            ).padStart(
+                                                2,
+                                                "0"
+                                            )}
+                                        </div>
+
+                                        <div className="role-details-permission-icon">
+                                            <KeyRound
+                                                size={16}
+                                            />
+                                        </div>
+
+                                        <div className="role-details-permission-copy">
+
+                                            <span>
+                                                PERMISSION
+                                            </span>
+
+                                            <strong>
+                                                {
+                                                    item.permission
+                                                        .name
+                                                }
+                                            </strong>
+
+                                            <code>
+                                                {
+                                                    item.permission
+                                                        .code
+                                                }
+                                            </code>
+
+                                        </div>
+
+                                        <span className="role-details-enabled-badge">
+                                            <span />
+
+                                            Assigned
+                                        </span>
+
+                                    </article>
                                 )
                             )}
-                        </tbody>
 
-                    </table>
-                )}
+                        </div>
+                    )}
+
+                </article>
 
             </section>
 

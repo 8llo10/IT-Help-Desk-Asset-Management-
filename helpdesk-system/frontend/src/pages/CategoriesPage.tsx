@@ -1,13 +1,31 @@
 import {
     useEffect,
+    useMemo,
     useState,
 } from "react";
+
+import type {
+    FormEvent,
+} from "react";
+
+import {
+    Check,
+    CheckCircle2,
+    Edit3,
+    FolderCog,
+    Plus,
+    Search,
+    Tags,
+    X,
+} from "lucide-react";
 
 import {
     createCategory,
     getCategories,
     updateCategory,
 } from "../api/categories.api";
+
+import "../styles/CategoriesPage.css";
 
 interface Category {
     id: number;
@@ -21,17 +39,14 @@ export default function CategoriesPage() {
     const [name, setName] =
         useState("");
 
-    const [
-        editingId,
-        setEditingId,
-    ] = useState<number | null>(
-        null
-    );
+    const [editingId, setEditingId] =
+        useState<number | null>(null);
 
-    const [
-        editingName,
-        setEditingName,
-    ] = useState("");
+    const [editingName, setEditingName] =
+        useState("");
+
+    const [search, setSearch] =
+        useState("");
 
     const [loading, setLoading] =
         useState(true);
@@ -45,42 +60,49 @@ export default function CategoriesPage() {
     const [message, setMessage] =
         useState("");
 
-    const fetchCategories =
-        async () => {
-            try {
-                setError("");
+    /* =========================================================
+       FETCH
+       ========================================================= */
 
-                const response =
-                    await getCategories();
+    const fetchCategories = async () => {
+        try {
+            setError("");
 
-                const data =
-                    response.data?.data
-                        ?.categories ??
-                    response.data?.data ??
-                    [];
+            const response =
+                await getCategories();
 
-                setCategories(
-                    Array.isArray(data)
-                        ? data
-                        : []
-                );
-            } catch (error: any) {
-                setError(
-                    error.response?.data
-                        ?.message ??
-                    "Failed to load categories"
-                );
-            } finally {
-                setLoading(false);
-            }
-        };
+            const data =
+                response.data?.data
+                    ?.categories ??
+                response.data?.data ??
+                [];
+
+            setCategories(
+                Array.isArray(data)
+                    ? data
+                    : []
+            );
+        } catch (error: any) {
+            setError(
+                error.response?.data
+                    ?.message ??
+                "Failed to load categories"
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         void fetchCategories();
     }, []);
 
+    /* =========================================================
+       CREATE
+       ========================================================= */
+
     const handleCreate = async (
-        event: React.FormEvent
+        event: FormEvent
     ) => {
         event.preventDefault();
 
@@ -134,6 +156,10 @@ export default function CategoriesPage() {
             setSaving(false);
         }
     };
+
+    /* =========================================================
+       EDIT
+       ========================================================= */
 
     const startEditing = (
         category: Category
@@ -219,193 +245,487 @@ export default function CategoriesPage() {
         }
     };
 
+    /* =========================================================
+       SEARCH
+       ========================================================= */
+
+    const filteredCategories =
+        useMemo(() => {
+            const query =
+                search
+                    .trim()
+                    .toLowerCase();
+
+            if (!query) {
+                return categories;
+            }
+
+            return categories.filter(
+                (category) =>
+                    category.name
+                        .toLowerCase()
+                        .includes(query) ||
+                    String(category.id)
+                        .includes(query)
+            );
+        }, [
+            categories,
+            search,
+        ]);
+
+    /* =========================================================
+       LOADING
+       ========================================================= */
+
     if (loading) {
         return (
-            <p>
-                Loading categories...
-            </p>
+            <div className="categories-loading">
+
+                <div className="categories-spinner" />
+
+                <p>
+                    Loading categories...
+                </p>
+
+            </div>
         );
     }
 
+    /* =========================================================
+       PAGE
+       ========================================================= */
+
     return (
-        <div>
+        <div className="categories-page">
 
-            <div>
-                <h1>
-                    Categories
-                </h1>
+            {/* HEADER */}
 
-                <p>
-                    Manage IT support
-                    ticket categories.
-                </p>
+            <section className="categories-header">
 
-                <p>
-                    Total:{" "}
-                    {categories.length}
-                </p>
-            </div>
+                <div>
+
+                    <span className="categories-eyebrow">
+                        TICKET MANAGEMENT
+                    </span>
+
+                    <h1>
+                        Categories
+                    </h1>
+
+                    <p>
+                        Organize IT support requests
+                        into clear and manageable
+                        categories.
+                    </p>
+
+                </div>
+
+                <div className="categories-header-icon">
+                    <Tags
+                        size={29}
+                        strokeWidth={1.7}
+                    />
+                </div>
+
+            </section>
+
+            {/* SUMMARY */}
+
+            <section className="categories-summary">
+
+                <div className="categories-summary-card">
+
+                    <div className="categories-summary-icon">
+                        <Tags size={20} />
+                    </div>
+
+                    <div>
+                        <span>
+                            Total Categories
+                        </span>
+
+                        <strong>
+                            {categories.length}
+                        </strong>
+
+                        <p>
+                            Available ticket categories
+                        </p>
+                    </div>
+
+                </div>
+
+                <div className="categories-summary-info">
+
+                    <FolderCog size={20} />
+
+                    <div>
+                        <strong>
+                            Support Classification
+                        </strong>
+
+                        <span>
+                            Categories help route and
+                            organize incoming IT tickets.
+                        </span>
+                    </div>
+
+                </div>
+
+            </section>
+
+            {/* MESSAGES */}
 
             {error && (
-                <p>
+                <div
+                    className="categories-alert error"
+                    role="alert"
+                >
                     {error}
-                </p>
+                </div>
             )}
 
             {message && (
-                <p>
-                    {message}
-                </p>
-            )}
-
-            <form
-                onSubmit={
-                    handleCreate
-                }
-            >
-                <label>
-                    Category Name
-                </label>
-
-                <input
-                    type="text"
-                    placeholder="Hardware"
-                    value={name}
-                    onChange={(event) =>
-                        setName(
-                            event.target.value
-                        )
-                    }
-                    disabled={saving}
-                />
-
-                <button
-                    type="submit"
-                    disabled={
-                        saving ||
-                        !name.trim()
-                    }
+                <div
+                    className="categories-alert success"
+                    role="status"
                 >
-                    {saving
-                        ? "Saving..."
-                        : "Add Category"}
-                </button>
-            </form>
+                    <CheckCircle2 size={17} />
 
-            <hr />
-
-            {categories.length === 0 ? (
-                <p>
-                    No categories found.
-                </p>
-            ) : (
-                <table>
-                    <thead>
-                        <tr>
-                            <th>
-                                ID
-                            </th>
-
-                            <th>
-                                Category
-                            </th>
-
-                            <th>
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {categories.map(
-                            (category) => (
-                                <tr
-                                    key={
-                                        category.id
-                                    }
-                                >
-                                    <td>
-                                        {
-                                            category.id
-                                        }
-                                    </td>
-
-                                    <td>
-                                        {editingId ===
-                                            category.id ? (
-                                            <input
-                                                type="text"
-                                                value={
-                                                    editingName
-                                                }
-                                                onChange={(
-                                                    event
-                                                ) =>
-                                                    setEditingName(
-                                                        event
-                                                            .target
-                                                            .value
-                                                    )
-                                                }
-                                                disabled={
-                                                    saving
-                                                }
-                                            />
-                                        ) : (
-                                            category.name
-                                        )}
-                                    </td>
-
-                                    <td>
-                                        {editingId ===
-                                            category.id ? (
-                                            <>
-                                                <button
-                                                    type="button"
-                                                    disabled={
-                                                        saving
-                                                    }
-                                                    onClick={() =>
-                                                        void saveEditing(
-                                                            category.id
-                                                        )
-                                                    }
-                                                >
-                                                    Save
-                                                </button>
-
-                                                <button
-                                                    type="button"
-                                                    disabled={
-                                                        saving
-                                                    }
-                                                    onClick={
-                                                        cancelEditing
-                                                    }
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    startEditing(
-                                                        category
-                                                    )
-                                                }
-                                            >
-                                                Edit
-                                            </button>
-                                        )}
-                                    </td>
-
-                                </tr>
-                            )
-                        )}
-                    </tbody>
-                </table>
+                    {message}
+                </div>
             )}
+
+            {/* CREATE */}
+
+            <section className="categories-create-card">
+
+                <div className="categories-card-heading">
+
+                    <div className="categories-heading-icon">
+                        <Plus size={18} />
+                    </div>
+
+                    <div>
+
+                        <span>
+                            NEW CATEGORY
+                        </span>
+
+                        <h2>
+                            Add Category
+                        </h2>
+
+                        <p>
+                            Create a new classification
+                            for IT support tickets.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <form
+                    className="categories-create-form"
+                    onSubmit={handleCreate}
+                >
+
+                    <div className="categories-field">
+
+                        <label htmlFor="category-name">
+                            Category Name
+                        </label>
+
+                        <div className="categories-input-shell">
+
+                            <Tags size={17} />
+
+                            <input
+                                id="category-name"
+                                type="text"
+                                placeholder="Hardware"
+                                value={name}
+                                onChange={(event) =>
+                                    setName(
+                                        event.target.value
+                                    )
+                                }
+                                disabled={saving}
+                            />
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="categories-add-button"
+                        disabled={
+                            saving ||
+                            !name.trim()
+                        }
+                    >
+                        {saving ? (
+                            <>
+                                <span className="categories-button-spinner" />
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                <Plus size={17} />
+                                Add Category
+                            </>
+                        )}
+                    </button>
+
+                </form>
+
+            </section>
+
+            {/* LIST */}
+
+            <section className="categories-list-card">
+
+                <div className="categories-list-header">
+
+                    <div>
+
+                        <span>
+                            CATEGORY DIRECTORY
+                        </span>
+
+                        <h2>
+                            Ticket Categories
+                        </h2>
+
+                        <p>
+                            View and manage the categories
+                            currently available.
+                        </p>
+
+                    </div>
+
+                    <div className="categories-search">
+
+                        <Search size={17} />
+
+                        <input
+                            type="search"
+                            placeholder="Search categories..."
+                            value={search}
+                            onChange={(event) =>
+                                setSearch(
+                                    event.target.value
+                                )
+                            }
+                        />
+
+                    </div>
+
+                </div>
+
+                {filteredCategories.length === 0 ? (
+                    <div className="categories-empty">
+
+                        <div className="categories-empty-icon">
+                            <Tags size={27} />
+                        </div>
+
+                        <h3>
+                            No categories found
+                        </h3>
+
+                        <p>
+                            {search
+                                ? "No category matches your search."
+                                : "Create your first ticket category."}
+                        </p>
+
+                    </div>
+                ) : (
+                    <div className="categories-table-wrapper">
+
+                        <table className="categories-table">
+
+                            <thead>
+                                <tr>
+                                    <th>
+                                        Category
+                                    </th>
+
+                                    <th>
+                                        ID
+                                    </th>
+
+                                    <th className="categories-actions-heading">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                {filteredCategories.map(
+                                    (
+                                        category,
+                                        index
+                                    ) => {
+                                        const isEditing =
+                                            editingId ===
+                                            category.id;
+
+                                        return (
+                                            <tr
+                                                key={category.id}
+                                                style={{
+                                                    animationDelay:
+                                                        `${index * 35}ms`,
+                                                }}
+                                            >
+
+                                                <td>
+
+                                                    <div className="categories-name-cell">
+
+                                                        <div className="categories-row-icon">
+                                                            <Tags size={16} />
+                                                        </div>
+
+                                                        {isEditing ? (
+                                                            <div className="categories-edit-input">
+
+                                                                <input
+                                                                    type="text"
+                                                                    value={editingName}
+                                                                    autoFocus
+                                                                    onChange={(event) =>
+                                                                        setEditingName(
+                                                                            event.target.value
+                                                                        )
+                                                                    }
+                                                                    onKeyDown={(event) => {
+                                                                        if (
+                                                                            event.key ===
+                                                                            "Enter"
+                                                                        ) {
+                                                                            event.preventDefault();
+
+                                                                            void saveEditing(
+                                                                                category.id
+                                                                            );
+                                                                        }
+
+                                                                        if (
+                                                                            event.key ===
+                                                                            "Escape"
+                                                                        ) {
+                                                                            cancelEditing();
+                                                                        }
+                                                                    }}
+                                                                    disabled={saving}
+                                                                />
+
+                                                            </div>
+                                                        ) : (
+                                                            <div className="categories-name-copy">
+
+                                                                <strong>
+                                                                    {category.name}
+                                                                </strong>
+
+                                                                <span>
+                                                                    IT Support Category
+                                                                </span>
+
+                                                            </div>
+                                                        )}
+
+                                                    </div>
+
+                                                </td>
+
+                                                <td>
+                                                    <span className="categories-id">
+                                                        #{category.id}
+                                                    </span>
+                                                </td>
+
+                                                <td>
+
+                                                    <div className="categories-actions">
+
+                                                        {isEditing ? (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    className="categories-action save"
+                                                                    disabled={saving}
+                                                                    onClick={() =>
+                                                                        void saveEditing(
+                                                                            category.id
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Check size={15} />
+                                                                    Save
+                                                                </button>
+
+                                                                <button
+                                                                    type="button"
+                                                                    className="categories-action cancel"
+                                                                    disabled={saving}
+                                                                    onClick={
+                                                                        cancelEditing
+                                                                    }
+                                                                >
+                                                                    <X size={15} />
+                                                                    Cancel
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                className="categories-action edit"
+                                                                onClick={() =>
+                                                                    startEditing(
+                                                                        category
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Edit3 size={15} />
+                                                                Edit
+                                                            </button>
+                                                        )}
+
+                                                    </div>
+
+                                                </td>
+
+                                            </tr>
+                                        );
+                                    }
+                                )}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                )}
+
+                <div className="categories-list-footer">
+                    Showing{" "}
+                    <strong>
+                        {filteredCategories.length}
+                    </strong>{" "}
+                    of{" "}
+                    <strong>
+                        {categories.length}
+                    </strong>{" "}
+                    categories
+                </div>
+
+            </section>
 
         </div>
     );

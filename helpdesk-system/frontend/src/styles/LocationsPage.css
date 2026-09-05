@@ -1,0 +1,1273 @@
+/* =========================================================
+   WASL — LOCATIONS PAGE
+   ========================================================= */
+
+.locations-page {
+    width: 100%;
+    max-width: 1450px;
+
+    margin: 0 auto;
+    padding-bottom: 48px;
+
+    animation:
+        locationsEnter .42s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+
+/* =========================================================
+   HERO
+   ========================================================= */
+
+.locations-hero {
+    position: relative;
+
+    min-height: 175px;
+
+    overflow: hidden;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 25px;
+
+    margin-bottom: 14px;
+    padding: 27px 30px;
+
+    border:
+        1px solid rgba(230, 198, 113, .46);
+
+    border-radius: 25px;
+
+    background:
+        linear-gradient(114deg,
+            rgba(255, 244, 194, .88),
+            rgba(255, 255, 255, .95) 55%,
+            rgba(249, 225, 230, .49));
+
+    box-shadow:
+        0 12px 38px rgba(83, 58, 35, .055);
+}
+
+.locations-hero::before {
+    content: "";
+
+    position: absolute;
+
+    width: 240px;
+    height: 240px;
+
+    top: -165px;
+    right: 17%;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255, 195, 24, .15);
+}
+
+.locations-hero::after {
+    content: "";
+
+    position: absolute;
+
+    width: 145px;
+    height: 145px;
+
+    right: -55px;
+    bottom: -85px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(226, 167, 180, .15);
+}
+
+.locations-hero-copy,
+.locations-hero-stats {
+    position: relative;
+    z-index: 2;
+}
+
+.locations-eyebrow {
+    width: fit-content;
+
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    margin-bottom: 8px;
+
+    color: #9c7118;
+
+    font-size: .56rem;
+    font-weight: 850;
+
+    letter-spacing: .15em;
+}
+
+.locations-eyebrow>span {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: #e3b62b;
+
+    box-shadow:
+        0 0 0 5px rgba(227, 182, 43, .11);
+}
+
+.locations-hero h1 {
+    margin: 0 0 7px;
+
+    color: var(--brown-700);
+
+    font-size:
+        clamp(2rem,
+            4vw,
+            2.8rem);
+}
+
+.locations-hero p {
+    max-width: 590px;
+
+    margin: 0;
+
+    color: var(--text-secondary);
+
+    font-size: .74rem;
+
+    line-height: 1.65;
+}
+
+
+/* =========================================================
+   HERO STATS
+   ========================================================= */
+
+.locations-hero-stats {
+    min-width: 270px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap: 8px;
+}
+
+.locations-hero-stat {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 11px;
+
+    border:
+        1px solid rgba(222, 202, 169, .42);
+
+    border-radius: 15px;
+
+    background:
+        rgba(255, 255, 255, .7);
+
+    backdrop-filter:
+        blur(14px);
+
+    -webkit-backdrop-filter:
+        blur(14px);
+}
+
+.locations-hero-stat-icon {
+    width: 39px;
+    height: 39px;
+
+    flex: 0 0 39px;
+
+    display: grid;
+    place-items: center;
+
+    color: #916814;
+
+    border-radius: 11px;
+
+    background:
+        #fff0ad;
+}
+
+.locations-hero-stat-icon-pink {
+    color: #8c6267;
+
+    background:
+        #fae4e6;
+}
+
+.locations-hero-stat span {
+    display: block;
+
+    color: var(--text-muted);
+
+    font-size: .49rem;
+}
+
+.locations-hero-stat strong {
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--brown-700);
+
+    font-size: 1.05rem;
+}
+
+
+/* =========================================================
+   ALERTS
+   ========================================================= */
+
+.locations-alert {
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    margin-bottom: 12px;
+    padding: 10px 13px;
+
+    font-size: .63rem;
+
+    border-radius: 10px;
+
+    animation:
+        locationsMessage .2s ease both;
+}
+
+.locations-alert-error {
+    color: #a24e53;
+
+    border:
+        1px solid #efcccc;
+
+    background:
+        #fff1f1;
+}
+
+.locations-alert-success {
+    color: #607951;
+
+    border:
+        1px solid #d9e7d1;
+
+    background:
+        #eff6eb;
+}
+
+
+/* =========================================================
+   WORKSPACE
+   ========================================================= */
+
+.locations-workspace {
+    display: grid;
+
+    grid-template-columns:
+        minmax(280px, .7fr) minmax(0, 1.7fr);
+
+    gap: 14px;
+
+    align-items: start;
+}
+
+
+/* =========================================================
+   CREATE
+   ========================================================= */
+
+.locations-create-card,
+.locations-directory {
+    border:
+        1px solid rgba(226, 215, 201, .82);
+
+    border-radius: 21px;
+
+    background:
+        rgba(255, 255, 255, .93);
+
+    box-shadow:
+        0 8px 28px rgba(84, 61, 39, .045);
+}
+
+.locations-create-card {
+    position: sticky;
+
+    top:
+        calc(var(--navbar-height) + 18px);
+
+    padding: 20px;
+}
+
+.locations-card-heading {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 10px;
+
+    margin-bottom: 18px;
+}
+
+.locations-heading-icon {
+    width: 40px;
+    height: 40px;
+
+    flex: 0 0 40px;
+
+    display: grid;
+    place-items: center;
+
+    color: #926916;
+
+    border-radius: 12px;
+
+    background:
+        linear-gradient(135deg,
+            #fff1ad,
+            #ffdc60);
+}
+
+.locations-card-heading span,
+.locations-section-eyebrow {
+    display: block;
+
+    margin-bottom: 2px;
+
+    color: #a1761c;
+
+    font-size: .5rem;
+    font-weight: 850;
+
+    letter-spacing: .13em;
+}
+
+.locations-card-heading h2,
+.locations-directory-header h2 {
+    margin: 0;
+
+    color: var(--brown-700);
+
+    font-size: .95rem;
+}
+
+.locations-card-heading p,
+.locations-directory-header p {
+    margin: 3px 0 0;
+
+    color: var(--text-muted);
+
+    font-size: .57rem;
+
+    line-height: 1.55;
+}
+
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
+.locations-create-form {
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+}
+
+.locations-field {
+    min-width: 0;
+}
+
+.locations-field label {
+    display: block;
+
+    margin:
+        0 0 6px 2px;
+
+    color: #715f4f;
+
+    font-size: .58rem;
+    font-weight: 760;
+}
+
+.locations-field label b {
+    margin-left: 3px;
+
+    color: #c89518;
+}
+
+.locations-input-shell,
+.locations-select-shell {
+    min-height: 42px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 0 11px;
+
+    color: #a08f7f;
+
+    border:
+        1px solid #e5dbd1;
+
+    border-radius: 10px;
+
+    background: #fffefd;
+
+    transition:
+        border-color .18s ease,
+        box-shadow .18s ease;
+}
+
+.locations-input-shell:focus-within,
+.locations-select-shell:focus-within {
+    border-color:
+        #dfb020;
+
+    box-shadow:
+        0 0 0 4px rgba(255, 199, 43, .07);
+}
+
+.locations-input-shell input,
+.locations-select-shell select {
+    flex: 1;
+
+    width: 100%;
+    min-width: 0;
+    height: 40px;
+
+    color: var(--brown-600);
+
+    font-size: .65rem;
+
+    border: 0;
+    outline: 0;
+
+    background:
+        transparent;
+}
+
+.locations-input-shell input::placeholder {
+    color: #b8aca0;
+}
+
+.locations-select-shell select {
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   CREATE BUTTON
+   ========================================================= */
+
+.locations-create-button {
+    min-height: 41px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    margin-top: 2px;
+
+    color: #4d351d;
+
+    font-size: .64rem;
+    font-weight: 820;
+
+    border:
+        1px solid #e0b11b;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    background:
+        linear-gradient(135deg,
+            #ffe576,
+            #ffc72b);
+
+    box-shadow:
+        0 7px 18px rgba(237, 177, 23, .16);
+
+    transition:
+        transform .18s ease,
+        box-shadow .18s ease;
+}
+
+.locations-create-button:hover:not(:disabled) {
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 11px 25px rgba(237, 177, 23, .23);
+}
+
+.locations-create-button:disabled {
+    opacity: .48;
+
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   NOTE
+   ========================================================= */
+
+.locations-create-note {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 7px;
+
+    margin-top: 14px;
+    padding: 10px;
+
+    color: #897667;
+
+    font-size: .53rem;
+
+    line-height: 1.5;
+
+    border-radius: 10px;
+
+    background:
+        linear-gradient(120deg,
+            #fff9e7,
+            #fdf6f4);
+}
+
+.locations-create-note svg {
+    flex: 0 0 auto;
+
+    color: #b98b24;
+}
+
+
+/* =========================================================
+   DIRECTORY
+   ========================================================= */
+
+.locations-directory {
+    min-width: 0;
+
+    overflow: hidden;
+}
+
+.locations-directory-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding:
+        20px 21px 15px;
+}
+
+.locations-count-chip {
+    flex: 0 0 auto;
+
+    padding: 6px 9px;
+
+    color: #80651f;
+
+    font-size: .52rem;
+    font-weight: 800;
+
+    border-radius: 999px;
+
+    background:
+        #fff4c9;
+}
+
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+
+.locations-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 12px 20px;
+
+    border-top:
+        1px solid #eee7df;
+
+    border-bottom:
+        1px solid #eee7df;
+
+    background:
+        rgba(252, 250, 247, .7);
+}
+
+.locations-search {
+    width:
+        min(390px, 100%);
+
+    height: 39px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 0 10px;
+
+    color: #a18f7f;
+
+    border:
+        1px solid #e5dbd1;
+
+    border-radius: 10px;
+
+    background: #fff;
+}
+
+.locations-search:focus-within {
+    border-color:
+        #e1b220;
+
+    box-shadow:
+        0 0 0 4px rgba(255, 199, 43, .07);
+}
+
+.locations-search input {
+    flex: 1;
+
+    width: 100%;
+    min-width: 0;
+
+    color: var(--brown-600);
+
+    font-size: .65rem;
+
+    border: 0;
+    outline: 0;
+
+    background:
+        transparent;
+}
+
+.locations-search input::placeholder {
+    color: #b9ada1;
+}
+
+.locations-search button {
+    display: grid;
+    place-items: center;
+
+    padding: 3px;
+
+    color: #a3978c;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+
+    background: transparent;
+}
+
+.locations-search button:hover {
+    color:
+        var(--brown-600);
+
+    background:
+        #f5f0ea;
+}
+
+.locations-toolbar-label {
+    display: flex;
+    align-items: center;
+
+    gap: 5px;
+
+    color: var(--text-muted);
+
+    font-size: .53rem;
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.locations-table-wrap {
+    width: 100%;
+
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling:
+        touch;
+}
+
+.locations-table {
+    width: 100%;
+
+    min-width: 790px;
+
+    border-collapse: collapse;
+}
+
+.locations-table th {
+    padding: 10px 15px;
+
+    color: #9c8e82;
+
+    font-size: .5rem;
+    font-weight: 850;
+
+    letter-spacing: .055em;
+
+    text-align: left;
+    text-transform: uppercase;
+
+    background:
+        rgba(250, 248, 245, .66);
+
+    border-bottom:
+        1px solid #eee7df;
+}
+
+.locations-table td {
+    padding: 12px 15px;
+
+    vertical-align: middle;
+
+    border-bottom:
+        1px solid rgba(235, 228, 220, .75);
+}
+
+.locations-table tbody tr {
+    transition:
+        background .17s ease;
+}
+
+.locations-table tbody tr:hover {
+    background:
+        rgba(255, 245, 205, .22);
+}
+
+.locations-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+
+/* =========================================================
+   LOCATION CELL
+   ========================================================= */
+
+.locations-name-cell {
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+}
+
+.locations-row-icon {
+    width: 35px;
+    height: 35px;
+
+    flex: 0 0 35px;
+
+    display: grid;
+    place-items: center;
+
+    color: #956b16;
+
+    border-radius: 10px;
+
+    background:
+        linear-gradient(135deg,
+            #fff5c8,
+            #ffe68a);
+}
+
+.locations-name-cell>div:last-child {
+    min-width: 0;
+}
+
+.locations-name-cell strong {
+    display: block;
+
+    max-width: 260px;
+
+    overflow: hidden;
+
+    color: var(--brown-600);
+
+    font-size: .66rem;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.locations-name-cell span {
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--text-muted);
+
+    font-size: .49rem;
+}
+
+
+/* =========================================================
+   BRANCH
+   ========================================================= */
+
+.locations-branch-cell {
+    display: flex;
+    align-items: center;
+
+    gap: 6px;
+
+    color: #796858;
+
+    font-size: .59rem;
+}
+
+.locations-branch-cell svg {
+    color: #a67b23;
+}
+
+
+/* =========================================================
+   FLOOR / ROOM
+   ========================================================= */
+
+.locations-floor-room {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 5px;
+}
+
+.locations-floor-room>span {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 4px;
+
+    padding: 4px 6px;
+
+    color: #786756;
+
+    font-size: .5rem;
+
+    border-radius: 7px;
+
+    background:
+        #f7f3ed;
+}
+
+.locations-floor-room>span svg {
+    color: #a47a21;
+}
+
+.locations-floor-room .locations-empty-detail {
+    padding: 0;
+
+    background:
+        transparent;
+}
+
+
+/* =========================================================
+   ID
+   ========================================================= */
+
+.locations-id {
+    color: #897665;
+
+    font-size: .55rem;
+    font-weight: 750;
+
+    font-variant-numeric:
+        tabular-nums;
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+.locations-status {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 5px;
+
+    padding: 4px 7px;
+
+    border-radius: 999px;
+
+    font-size: .5rem;
+    font-weight: 780;
+}
+
+.locations-status>span {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+}
+
+.locations-status.active {
+    color: #607752;
+
+    background:
+        #eef5e9;
+}
+
+.locations-status.active>span {
+    background:
+        #819b6f;
+}
+
+.locations-status.inactive {
+    color: #8c8178;
+
+    background:
+        #efebe7;
+}
+
+.locations-status.inactive>span {
+    background:
+        #9b9188;
+}
+
+
+/* =========================================================
+   EMPTY
+   ========================================================= */
+
+.locations-empty {
+    min-height: 290px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    padding: 30px;
+
+    text-align: center;
+}
+
+.locations-empty-icon {
+    width: 53px;
+    height: 53px;
+
+    display: grid;
+    place-items: center;
+
+    margin-bottom: 4px;
+
+    color: #a57b24;
+
+    border-radius: 15px;
+
+    background:
+        #fff3bd;
+}
+
+.locations-empty strong {
+    color:
+        var(--brown-700);
+
+    font-size: .72rem;
+}
+
+.locations-empty p {
+    margin: 0;
+
+    color:
+        var(--text-muted);
+
+    font-size: .59rem;
+}
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.locations-loading {
+    min-height: 480px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    text-align: center;
+}
+
+.locations-loader-icon {
+    width: 52px;
+    height: 52px;
+
+    display: grid;
+    place-items: center;
+
+    margin-bottom: 5px;
+
+    color: #956c18;
+
+    border-radius: 16px;
+
+    background:
+        #fff1b7;
+
+    animation:
+        locationsPulse 1.5s ease-in-out infinite;
+}
+
+.locations-loading strong {
+    color:
+        var(--brown-700);
+
+    font-size: .75rem;
+}
+
+.locations-loading p {
+    margin: 0;
+
+    color:
+        var(--text-muted);
+
+    font-size: .6rem;
+}
+
+
+/* =========================================================
+   SPINNER
+   ========================================================= */
+
+.locations-button-spinner {
+    width: 13px;
+    height: 13px;
+
+    border:
+        2px solid rgba(73, 51, 30, .2);
+
+    border-top-color:
+        #4d351d;
+
+    border-radius: 50%;
+
+    animation:
+        locationsSpin .7s linear infinite;
+}
+
+
+/* =========================================================
+   ANIMATIONS
+   ========================================================= */
+
+@keyframes locationsEnter {
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(7px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0);
+    }
+}
+
+@keyframes locationsMessage {
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0);
+    }
+}
+
+@keyframes locationsSpin {
+    to {
+        transform:
+            rotate(360deg);
+    }
+}
+
+@keyframes locationsPulse {
+
+    0%,
+    100% {
+        transform:
+            scale(1);
+    }
+
+    50% {
+        transform:
+            scale(1.07);
+    }
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 950px) {
+
+    .locations-workspace {
+        grid-template-columns:
+            1fr;
+    }
+
+    .locations-create-card {
+        position: static;
+    }
+
+    .locations-create-form {
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 12px;
+    }
+
+    .locations-create-button {
+        grid-column:
+            1 / -1;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 620px) {
+
+    .locations-page {
+        padding-bottom: 30px;
+    }
+
+    .locations-hero {
+        align-items: flex-start;
+        flex-direction: column;
+
+        min-height: 0;
+
+        padding: 19px 16px;
+
+        border-radius: 20px;
+    }
+
+    .locations-hero-stats {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .locations-create-card,
+    .locations-directory {
+        border-radius: 17px;
+    }
+
+    .locations-create-card {
+        padding: 16px;
+    }
+
+    .locations-create-form {
+        display: flex;
+    }
+
+    .locations-directory-header {
+        padding:
+            17px 15px 13px;
+    }
+
+    .locations-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+
+        padding:
+            11px 14px;
+    }
+
+    .locations-search {
+        width: 100%;
+    }
+
+    .locations-toolbar-label {
+        display: none;
+    }
+}
+
+
+/* =========================================================
+   VERY SMALL
+   ========================================================= */
+
+@media (max-width: 420px) {
+
+    .locations-hero-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .locations-count-chip {
+        display: none;
+    }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .locations-page,
+    .locations-button-spinner,
+    .locations-loader-icon,
+    .locations-alert {
+        animation: none;
+    }
+
+    .locations-create-button {
+        transition: none;
+    }
+}

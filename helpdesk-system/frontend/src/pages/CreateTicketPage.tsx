@@ -3,11 +3,28 @@ import {
   useState,
 } from "react";
 
+import type {
+  FormEvent,
+} from "react";
+
 import {
   useNavigate,
 } from "react-router-dom";
 
+import {
+  AlertTriangle,
+  ArrowLeft,
+  FileText,
+  Laptop,
+  Plus,
+  Send,
+  Tag,
+  Ticket,
+} from "lucide-react";
+
 import api from "../api/client";
+
+import "../styles/CreateTicketPage.css";
 
 type TicketPriority =
   | "LOW"
@@ -67,7 +84,10 @@ export default function CreateTicketPage() {
   const [assetId, setAssetId] =
     useState("");
 
-  const [loadingData, setLoadingData] =
+  const [
+    loadingData,
+    setLoadingData,
+  ] =
     useState(true);
 
   const [saving, setSaving] =
@@ -89,7 +109,6 @@ export default function CreateTicketPage() {
             api.get(
               "/categories"
             ),
-
             api.get(
               "/assets"
             ),
@@ -138,7 +157,7 @@ export default function CreateTicketPage() {
   }, []);
 
   const handleSubmit = async (
-    event: React.FormEvent
+    event: FormEvent
   ) => {
     event.preventDefault();
 
@@ -146,7 +165,6 @@ export default function CreateTicketPage() {
       setError(
         "Ticket title is required."
       );
-
       return;
     }
 
@@ -154,7 +172,6 @@ export default function CreateTicketPage() {
       setError(
         "Description is required."
       );
-
       return;
     }
 
@@ -162,7 +179,6 @@ export default function CreateTicketPage() {
       setError(
         "Please select a category."
       );
-
       return;
     }
 
@@ -209,202 +225,393 @@ export default function CreateTicketPage() {
 
   if (loadingData) {
     return (
-      <p>
-        Loading ticket form...
-      </p>
+      <div className="create-ticket-loading">
+        <div className="create-ticket-spinner" />
+
+        <p>
+          Loading ticket form...
+        </p>
+      </div>
     );
   }
 
   return (
-    <div>
-      <h1>
-        Create Ticket
-      </h1>
+    <div className="create-ticket-page">
 
-      <p>
-        Submit a new IT support
-        request.
-      </p>
+      <button
+        type="button"
+        className="create-ticket-back"
+        onClick={() =>
+          navigate("/tickets")
+        }
+        disabled={saving}
+      >
+        <ArrowLeft size={16} />
+
+        Back to Tickets
+      </button>
+
+      <section className="create-ticket-header">
+
+        <div className="create-ticket-header-copy">
+
+          <span className="create-ticket-eyebrow">
+            IT SUPPORT
+          </span>
+
+          <h1>
+            Create Ticket
+          </h1>
+
+          <p>
+            Submit a new IT support request
+            and provide the details needed
+            by the support team.
+          </p>
+
+        </div>
+
+        <div className="create-ticket-header-icon">
+          <Ticket
+            size={31}
+            strokeWidth={1.7}
+          />
+        </div>
+
+      </section>
 
       {error && (
-        <p>{error}</p>
+        <div
+          className="create-ticket-alert"
+          role="alert"
+        >
+          <AlertTriangle size={17} />
+          {error}
+        </div>
       )}
 
       <form
-        onSubmit={
-          handleSubmit
-        }
+        className="create-ticket-form-card"
+        onSubmit={handleSubmit}
       >
-        <div>
-          <label>
-            Title
-          </label>
 
-          <input
-            type="text"
-            value={title}
-            placeholder="Brief description of the issue"
-            disabled={saving}
-            required
-            onChange={(event) =>
-              setTitle(
-                event.target.value
-              )
-            }
-          />
-        </div>
+        <section className="create-ticket-section">
 
-        <div>
-          <label>
-            Description
-          </label>
+          <div className="create-ticket-section-heading">
 
-          <textarea
-            value={description}
-            placeholder="Describe the problem in detail..."
-            disabled={saving}
-            required
-            onChange={(event) =>
-              setDescription(
-                event.target.value
-              )
-            }
-          />
-        </div>
+            <div className="create-ticket-section-icon">
+              <FileText size={18} />
+            </div>
 
-        <div>
-          <label>
-            Priority
-          </label>
+            <div>
+              <span>
+                REQUEST DETAILS
+              </span>
 
-          <select
-            value={priority}
-            disabled={saving}
-            onChange={(event) =>
-              setPriority(
-                event.target
-                  .value as TicketPriority
-              )
-            }
-          >
-            <option value="LOW">
-              Low
-            </option>
+              <h2>
+                Describe the Issue
+              </h2>
 
-            <option value="MEDIUM">
-              Medium
-            </option>
+              <p>
+                Provide a clear title and
+                enough detail for the IT team.
+              </p>
+            </div>
 
-            <option value="HIGH">
-              High
-            </option>
+          </div>
 
-            <option value="CRITICAL">
-              Critical
-            </option>
-          </select>
-        </div>
+          <div className="create-ticket-fields">
 
-        <div>
-          <label>
-            Category
-          </label>
+            <div className="create-ticket-field">
 
-          <select
-            value={categoryId}
-            disabled={saving}
-            required
-            onChange={(event) =>
-              setCategoryId(
-                event.target.value
-              )
-            }
-          >
-            <option value="">
-              Select Category
-            </option>
+              <label htmlFor="ticket-title">
+                Title
+                <span>*</span>
+              </label>
 
-            {categories.map(
-              (category) => (
-                <option
-                  key={
-                    category.id
+              <div className="create-ticket-input-shell">
+
+                <Ticket size={16} />
+
+                <input
+                  id="ticket-title"
+                  type="text"
+                  value={title}
+                  placeholder="Brief description of the issue"
+                  disabled={saving}
+                  required
+                  onChange={(event) =>
+                    setTitle(
+                      event.target.value
+                    )
                   }
-                  value={
-                    category.id
+                />
+
+              </div>
+
+            </div>
+
+            <div className="create-ticket-field">
+
+              <label htmlFor="ticket-description">
+                Description
+                <span>*</span>
+              </label>
+
+              <div className="create-ticket-textarea-shell">
+
+                <FileText size={16} />
+
+                <textarea
+                  id="ticket-description"
+                  value={description}
+                  placeholder="Describe the problem in detail..."
+                  disabled={saving}
+                  required
+                  rows={7}
+                  onChange={(event) =>
+                    setDescription(
+                      event.target.value
+                    )
+                  }
+                />
+
+              </div>
+
+              <small>
+                Include what happened, when it
+                started, and any error messages.
+              </small>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <section className="create-ticket-section">
+
+          <div className="create-ticket-section-heading">
+
+            <div className="create-ticket-section-icon secondary">
+              <Tag size={18} />
+            </div>
+
+            <div>
+              <span>
+                CLASSIFICATION
+              </span>
+
+              <h2>
+                Ticket Information
+              </h2>
+
+              <p>
+                Set the category, priority,
+                and related asset.
+              </p>
+            </div>
+
+          </div>
+
+          <div className="create-ticket-grid">
+
+            <div className="create-ticket-field">
+
+              <label htmlFor="ticket-priority">
+                Priority
+              </label>
+
+              <div className="create-ticket-select-shell">
+
+                <AlertTriangle size={16} />
+
+                <select
+                  id="ticket-priority"
+                  value={priority}
+                  disabled={saving}
+                  onChange={(event) =>
+                    setPriority(
+                      event.target
+                        .value as TicketPriority
+                    )
                   }
                 >
-                  {
-                    category.name
+                  <option value="LOW">
+                    Low
+                  </option>
+
+                  <option value="MEDIUM">
+                    Medium
+                  </option>
+
+                  <option value="HIGH">
+                    High
+                  </option>
+
+                  <option value="CRITICAL">
+                    Critical
+                  </option>
+                </select>
+
+              </div>
+
+              <div
+                className={`create-ticket-priority-badge ${priority.toLowerCase()}`}
+              >
+                {priority === "LOW" &&
+                  "Low priority"}
+
+                {priority === "MEDIUM" &&
+                  "Normal response"}
+
+                {priority === "HIGH" &&
+                  "High priority"}
+
+                {priority === "CRITICAL" &&
+                  "Critical issue"}
+              </div>
+
+            </div>
+
+            <div className="create-ticket-field">
+
+              <label htmlFor="ticket-category">
+                Category
+                <span>*</span>
+              </label>
+
+              <div className="create-ticket-select-shell">
+
+                <Tag size={16} />
+
+                <select
+                  id="ticket-category"
+                  value={categoryId}
+                  disabled={saving}
+                  required
+                  onChange={(event) =>
+                    setCategoryId(
+                      event.target.value
+                    )
                   }
-                </option>
-              )
-            )}
-          </select>
-        </div>
+                >
+                  <option value="">
+                    Select Category
+                  </option>
 
-        <div>
-          <label>
-            Related Asset
-          </label>
+                  {categories.map(
+                    (category) => (
+                      <option
+                        key={category.id}
+                        value={category.id}
+                      >
+                        {category.name}
+                      </option>
+                    )
+                  )}
+                </select>
 
-          <select
-            value={assetId}
+              </div>
+
+            </div>
+
+            <div className="create-ticket-field create-ticket-field-full">
+
+              <label htmlFor="ticket-asset">
+                Related Asset
+              </label>
+
+              <div className="create-ticket-select-shell">
+
+                <Laptop size={16} />
+
+                <select
+                  id="ticket-asset"
+                  value={assetId}
+                  disabled={saving}
+                  onChange={(event) =>
+                    setAssetId(
+                      event.target.value
+                    )
+                  }
+                >
+                  <option value="">
+                    No Asset
+                  </option>
+
+                  {assets.map(
+                    (asset) => (
+                      <option
+                        key={asset.id}
+                        value={asset.id}
+                      >
+                        {asset.assetTag} -{" "}
+                        {asset.type}
+                        {asset.brand
+                          ? ` - ${asset.brand}`
+                          : ""}
+                        {asset.model
+                          ? ` ${asset.model}`
+                          : ""}
+                      </option>
+                    )
+                  )}
+                </select>
+
+              </div>
+
+              <small>
+                Optional. Select the device
+                affected by this issue.
+              </small>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <div className="create-ticket-actions">
+
+          <button
+            type="button"
+            className="create-ticket-cancel"
             disabled={saving}
-            onChange={(event) =>
-              setAssetId(
-                event.target.value
-              )
+            onClick={() =>
+              navigate("/tickets")
             }
           >
-            <option value="">
-              No Asset
-            </option>
+            Cancel
+          </button>
 
-            {assets.map(
-              (asset) => (
-                <option
-                  key={asset.id}
-                  value={asset.id}
-                >
-                  {asset.assetTag} -{" "}
-                  {asset.type}
-                  {asset.brand
-                    ? ` - ${asset.brand}`
-                    : ""}
-                  {asset.model
-                    ? ` ${asset.model}`
-                    : ""}
-                </option>
-              )
+          <button
+            type="submit"
+            className="create-ticket-submit"
+            disabled={
+              saving ||
+              !title.trim() ||
+              !description.trim() ||
+              !categoryId
+            }
+          >
+            {saving ? (
+              <>
+                <span className="create-ticket-button-spinner" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Send size={16} />
+                Create Ticket
+              </>
             )}
-          </select>
+          </button>
+
         </div>
 
-        <button
-          type="submit"
-          disabled={
-            saving ||
-            !title.trim() ||
-            !description.trim() ||
-            !categoryId
-          }
-        >
-          {saving
-            ? "Creating..."
-            : "Create Ticket"}
-        </button>
-
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() =>
-            navigate("/tickets")
-          }
-        >
-          Cancel
-        </button>
       </form>
+
     </div>
   );
 }

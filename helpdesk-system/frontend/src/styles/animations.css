@@ -1,4 +1,4 @@
-@keyframes fadeIn {
+@keyframes waslFadeIn {
     from {
         opacity: 0;
     }
@@ -8,10 +8,10 @@
     }
 }
 
-@keyframes fadeUp {
+@keyframes waslFadeUp {
     from {
         opacity: 0;
-        transform: translateY(14px);
+        transform: translateY(16px);
     }
 
     to {
@@ -20,10 +20,10 @@
     }
 }
 
-@keyframes slideInLeft {
+@keyframes waslSlideLeft {
     from {
         opacity: 0;
-        transform: translateX(-18px);
+        transform: translateX(-20px);
     }
 
     to {
@@ -32,21 +32,19 @@
     }
 }
 
-@keyframes glowPulse {
-
-    0%,
-    100% {
-        box-shadow:
-            0 0 0 rgba(141, 16, 24, 0);
+@keyframes waslSlideRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
     }
 
-    50% {
-        box-shadow:
-            0 0 24px rgba(141, 16, 24, 0.28);
+    to {
+        opacity: 1;
+        transform: translateX(0);
     }
 }
 
-@keyframes floatSoft {
+@keyframes waslFloat {
 
     0%,
     100% {
@@ -54,43 +52,82 @@
     }
 
     50% {
-        transform: translateY(-5px);
+        transform: translateY(-8px);
     }
 }
 
-@keyframes pulseDot {
-    0% {
-        transform: scale(1);
-        opacity: 1;
+@keyframes waslPulse {
+
+    0%,
+    100% {
+        box-shadow:
+            0 0 0 0 rgba(255, 200, 46, 0.22);
     }
 
     50% {
-        transform: scale(1.35);
-        opacity: 0.65;
+        box-shadow:
+            0 0 0 9px rgba(255, 200, 46, 0);
+    }
+}
+
+@keyframes waslGlow {
+
+    0%,
+    100% {
+        opacity: 0.55;
     }
 
-    100% {
-        transform: scale(1);
+    50% {
         opacity: 1;
     }
 }
 
-.page-enter {
-    animation:
-        fadeUp var(--transition-slow) both;
+@keyframes waslSpin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-.fade-in {
+.page-content,
+.dashboard-page,
+.tickets-page,
+.assets-page,
+.users-page,
+.profile-page,
+.edit-profile-page,
+.notifications-page {
     animation:
-        fadeIn var(--transition-slow) both;
+        waslFadeUp 0.42s ease both;
 }
 
-.float-soft {
-    animation:
-        floatSoft 4s ease-in-out infinite;
+.dashboard-card,
+.stat-card,
+article {
+    transition:
+        transform var(--transition-normal),
+        box-shadow var(--transition-normal),
+        border-color var(--transition-normal);
 }
 
-.pulse-dot {
-    animation:
-        pulseDot 1.8s ease-in-out infinite;
+@media (hover: hover) {
+
+    .dashboard-card:hover,
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+
+        transition-duration: 0.01ms !important;
+    }
 }
