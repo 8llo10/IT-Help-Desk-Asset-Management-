@@ -1,20 +1,26 @@
-import { Outlet } from "react-router-dom";
+import {
+  Outlet,
+} from "react-router-dom";
 
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 
 export default function DashboardLayout() {
-    return (
-        <div className="app-shell">
-            <Sidebar />
+  return (
+    <div className="app-shell">
 
-            <div className="app-main">
-                <Navbar />
+      <Sidebar />
 
-                <main className="app-content">
-                    <Outlet />
-                </main>
-            </div>
-        </div>
-    );
+      <div className="app-main">
+
+        <Navbar />
+
+        <main className="app-content">
+          <Outlet />
+        </main>
+
+      </div>
+
+    </div>
+  );
 }

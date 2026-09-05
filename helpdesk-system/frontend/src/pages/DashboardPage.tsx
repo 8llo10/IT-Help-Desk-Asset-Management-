@@ -1,5 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import {
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
+
+import {
+    Link,
+} from "react-router-dom";
 
 import {
     Activity,
@@ -29,8 +36,13 @@ import {
 } from "recharts";
 
 import api from "../api/client";
+import useAuth from "../hooks/useAuth";
 
-type DashboardStats = {
+/* =========================================================
+   TYPES
+   ========================================================= */
+
+interface DashboardStats {
     tickets: {
         total: number;
         open: number;
@@ -51,23 +63,27 @@ type DashboardStats = {
     users: {
         totalActive: number;
     };
-};
+}
 
-type RecentTicket = {
-    id: number;
-    ticketNumber: string;
-    title: string;
-    priority:
+type TicketPriority =
     | "LOW"
     | "MEDIUM"
     | "HIGH"
     | "CRITICAL";
 
-    status:
+type TicketStatus =
     | "OPEN"
     | "IN_PROGRESS"
     | "RESOLVED"
     | "CLOSED";
+
+interface RecentTicket {
+    id: number;
+    ticketNumber: string;
+    title: string;
+
+    priority: TicketPriority;
+    status: TicketStatus;
 
     createdAt: string;
     slaDueAt?: string | null;
@@ -75,171 +91,268 @@ type RecentTicket = {
     category?: {
         id: number;
         name: string;
-    };
+    } | null;
 
     createdBy?: {
         id: number;
         fullName: string;
-    };
+    } | null;
 
     assignedTo?: {
         id: number;
         fullName: string;
     } | null;
-};
+}
 
-type User = {
-    id?: number;
-    fullName?: string;
-    email?: string;
-    role?: "EMPLOYEE" | "TECHNICIAN" | "ADMIN";
-};
+/* =========================================================
+   PAGE
+   ========================================================= */
 
 export default function DashboardPage() {
-    const [stats, setStats] =
-        useState<DashboardStats | null>(null);
+    const {
+        user: currentUser,
+    } = useAuth();
 
-    const [recentTickets, setRecentTickets] =
+    const [
+        stats,
+        setStats,
+    ] =
+        useState<DashboardStats | null>(
+            null
+        );
+
+    const [
+        recentTickets,
+        setRecentTickets,
+    ] =
         useState<RecentTicket[]>([]);
 
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+    const [
+        loading,
+        setLoading,
+    ] =
+        useState(true);
 
-    const currentUser: User = JSON.parse(
-        localStorage.getItem("user") || "{}"
-    );
+    const [
+        error,
+        setError,
+    ] =
+        useState("");
+
+    /* =========================================================
+       LOAD DASHBOARD
+       ========================================================= */
 
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                setLoading(true);
-                setError("");
+        const fetchDashboardData =
+            async () => {
+                try {
+                    setLoading(true);
+                    setError("");
 
-                const [
-                    statsResponse,
-                    recentTicketsResponse,
-                ] = await Promise.all([
-                    api.get("/dashboard/stats"),
+                    const [
+                        statsResponse,
+                        recentTicketsResponse,
+                    ] =
+                        await Promise.all([
+                            api.get(
+                                "/dashboard/stats"
+                            ),
 
-                    api.get(
-                        "/dashboard/recent-tickets"
-                    ),
-                ]);
+                            api.get(
+                                "/dashboard/recent-tickets"
+                            ),
+                        ]);
 
-                setStats(statsResponse.data.data);
+                    const statsData =
+                        statsResponse.data?.data;
 
-                setRecentTickets(
-                    recentTicketsResponse.data.data
-                        .tickets || []
-                );
-            } catch (error: any) {
-                setError(
-                    error.response?.data?.message ||
-                    "Failed to load dashboard"
-                );
-            } finally {
-                setLoading(false);
-            }
-        };
+                    const recentData =
+                        recentTicketsResponse
+                            .data?.data?.tickets ??
+                        recentTicketsResponse
+                            .data?.data ??
+                        [];
 
-        fetchDashboardData();
+                    setStats(
+                        statsData ?? null
+                    );
+
+                    setRecentTickets(
+                        Array.isArray(
+                            recentData
+                        )
+                            ? recentData
+                            : []
+                    );
+                } catch (error: any) {
+                    setError(
+                        error.response?.data
+                            ?.message ??
+                        "Failed to load dashboard"
+                    );
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+        void fetchDashboardData();
     }, []);
 
-    const ticketChartData = useMemo(() => {
-        if (!stats) {
-            return [];
-        }
+    /* =========================================================
+       TICKET STATUS CHART
+       ========================================================= */
 
-        return [
-            {
-                name: "Open",
-                value: stats.tickets.open,
-            },
-            {
-                name: "Progress",
-                value: stats.tickets.inProgress,
-            },
-            {
-                name: "Resolved",
-                value: stats.tickets.resolved,
-            },
-            {
-                name: "Closed",
-                value: stats.tickets.closed,
-            },
-        ];
-    }, [stats]);
+    const ticketChartData =
+        useMemo(() => {
+            if (!stats) {
+                return [];
+            }
 
-    const priorityChartData = useMemo(() => {
-        if (!stats) {
-            return [];
-        }
+            return [
+                {
+                    name: "Open",
+                    value:
+                        stats.tickets.open,
+                },
 
-        const normalTickets = Math.max(
-            stats.tickets.total -
-            stats.tickets.high -
-            stats.tickets.critical,
-            0
-        );
+                {
+                    name: "Progress",
+                    value:
+                        stats.tickets
+                            .inProgress,
+                },
 
-        return [
-            {
-                name: "Normal",
-                value: normalTickets,
-                color: "#7266ff",
-            },
-            {
-                name: "High",
-                value: stats.tickets.high,
-                color: "#ff9f43",
-            },
-            {
-                name: "Critical",
-                value: stats.tickets.critical,
-                color: "#ff4d6d",
-            },
-        ];
-    }, [stats]);
+                {
+                    name: "Resolved",
+                    value:
+                        stats.tickets
+                            .resolved,
+                },
 
-    const assetChartData = useMemo(() => {
-        if (!stats) {
-            return [];
-        }
+                {
+                    name: "Closed",
+                    value:
+                        stats.tickets.closed,
+                },
+            ];
+        }, [stats]);
 
-        const inUse = Math.max(
-            stats.assets.total -
-            stats.assets.available -
-            stats.assets.maintenance,
-            0
-        );
+    /* =========================================================
+       PRIORITY CHART
+       ========================================================= */
 
-        return [
-            {
-                name: "Available",
-                value: stats.assets.available,
-                color: "#6c63ff",
-            },
-            {
-                name: "In Use",
-                value: inUse,
-                color: "#c084fc",
-            },
-            {
-                name: "Maintenance",
-                value: stats.assets.maintenance,
-                color: "#ff9f43",
-            },
-        ];
-    }, [stats]);
+    const priorityChartData =
+        useMemo(() => {
+            if (!stats) {
+                return [];
+            }
+
+            /*
+             * Backend currently exposes:
+             * total, high and critical.
+             *
+             * Remaining tickets are grouped
+             * under "Normal".
+             */
+            const normalTickets =
+                Math.max(
+                    stats.tickets.total -
+                    stats.tickets.high -
+                    stats.tickets
+                        .critical,
+                    0
+                );
+
+            return [
+                {
+                    name: "Normal",
+                    value:
+                        normalTickets,
+                    color: "#7266ff",
+                },
+
+                {
+                    name: "High",
+                    value:
+                        stats.tickets.high,
+                    color: "#ff9f43",
+                },
+
+                {
+                    name: "Critical",
+                    value:
+                        stats.tickets
+                            .critical,
+                    color: "#ff4d6d",
+                },
+            ];
+        }, [stats]);
+
+    /* =========================================================
+       ASSET CHART
+       ========================================================= */
+
+    const assetChartData =
+        useMemo(() => {
+            if (!stats) {
+                return [];
+            }
+
+            /*
+             * Backend currently exposes:
+             * total, available and maintenance.
+             *
+             * Remaining active assets are
+             * represented as "In Use".
+             */
+            const inUse =
+                Math.max(
+                    stats.assets.total -
+                    stats.assets
+                        .available -
+                    stats.assets
+                        .maintenance,
+                    0
+                );
+
+            return [
+                {
+                    name: "Available",
+                    value:
+                        stats.assets
+                            .available,
+                    color: "#6c63ff",
+                },
+
+                {
+                    name: "In Use",
+                    value: inUse,
+                    color: "#c084fc",
+                },
+
+                {
+                    name: "Maintenance",
+                    value:
+                        stats.assets
+                            .maintenance,
+                    color: "#ff9f43",
+                },
+            ];
+        }, [stats]);
+
+    /* =========================================================
+       HELPERS
+       ========================================================= */
 
     const getPriorityClass = (
-        priority: RecentTicket["priority"]
+        priority: TicketPriority
     ) => {
         return `priority-badge priority-${priority.toLowerCase()}`;
     };
 
     const getStatusClass = (
-        status: RecentTicket["status"]
+        status: TicketStatus
     ) => {
         return `status-badge status-${status
             .toLowerCase()
@@ -247,53 +360,101 @@ export default function DashboardPage() {
     };
 
     const formatStatus = (
-        status: RecentTicket["status"]
+        status: TicketStatus
     ) => {
         return status
             .replace("_", " ")
             .toLowerCase()
-            .replace(/\b\w/g, (letter) =>
-                letter.toUpperCase()
+            .replace(
+                /\b\w/g,
+                (letter) =>
+                    letter.toUpperCase()
             );
     };
+
+    /* =========================================================
+       LOADING
+       ========================================================= */
 
     if (loading) {
         return (
             <div className="dashboard-state">
                 <Activity className="dashboard-loader" />
 
-                <p>Loading dashboard...</p>
+                <p>
+                    Loading dashboard...
+                </p>
             </div>
         );
     }
 
+    /* =========================================================
+       ERROR
+       ========================================================= */
+
     if (error) {
         return (
             <div className="dashboard-error">
-                <AlertTriangle size={22} />
+                <AlertTriangle
+                    size={22}
+                />
 
                 <div>
                     <strong>
                         Dashboard unavailable
                     </strong>
 
-                    <p>{error}</p>
+                    <p>
+                        {error}
+                    </p>
                 </div>
             </div>
         );
     }
 
+    /* =========================================================
+       EMPTY DATA
+       ========================================================= */
+
     if (!stats) {
         return (
             <div className="dashboard-state">
-                <p>No dashboard data available.</p>
+                <p>
+                    No dashboard data
+                    available.
+                </p>
             </div>
         );
     }
 
+    /* =========================================================
+       PERMISSIONS / UI
+       ========================================================= */
+
+    const isAdmin =
+        currentUser?.role ===
+        "ADMIN";
+
+    const canCreateTicket =
+        currentUser?.role ===
+        "ADMIN" ||
+        currentUser?.role ===
+        "EMPLOYEE";
+
+    const displayName =
+        currentUser?.fullName ??
+        "User";
+
+    /* =========================================================
+       UI
+       ========================================================= */
+
     return (
         <div className="dashboard-page">
-            {/* HEADER */}
+
+            {/* =====================================================
+          HEADER
+          ===================================================== */}
 
             <section className="dashboard-header">
                 <div>
@@ -304,47 +465,60 @@ export default function DashboardPage() {
                     <h1>
                         Welcome back,{" "}
                         <span>
-                            {currentUser.fullName ||
-                                "Admin"}
+                            {displayName}
                         </span>
                     </h1>
 
                     <p className="dashboard-subtitle">
-                        Here's what's happening across
-                        your IT support environment today.
+                        Here's what's happening
+                        across your IT support
+                        environment today.
                     </p>
                 </div>
 
                 <div className="dashboard-header-actions">
-                    <Link
-                        to="/tickets/new"
-                        className="dashboard-primary-button"
-                    >
-                        <Plus size={18} />
 
-                        New Ticket
-                    </Link>
+                    {canCreateTicket && (
+                        <Link
+                            to="/tickets/new"
+                            className="dashboard-primary-button"
+                        >
+                            <Plus size={18} />
 
-                    {currentUser.role === "ADMIN" && (
+                            New Ticket
+                        </Link>
+                    )}
+
+                    {isAdmin && (
                         <Link
                             to="/assets/new"
                             className="dashboard-secondary-button"
                         >
-                            <Laptop size={18} />
+                            <Laptop
+                                size={18}
+                            />
 
                             Add Asset
                         </Link>
                     )}
+
                 </div>
             </section>
 
-            {/* TOP STATS */}
+            {/* =====================================================
+          TOP STATS
+          ===================================================== */}
 
             <section className="stats-grid">
+
+                {/* TOTAL TICKETS */}
+
                 <article className="stat-card stat-card-primary">
                     <div className="stat-card-top">
                         <div className="stat-icon">
-                            <TicketCheck size={21} />
+                            <TicketCheck
+                                size={21}
+                            />
                         </div>
 
                         <span className="stat-label">
@@ -353,23 +527,35 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="stat-value">
-                        {stats.tickets.total}
+                        {
+                            stats.tickets
+                                .total
+                        }
                     </div>
 
                     <div className="stat-footer">
                         <span>
-                            {stats.tickets.open} currently
-                            open
+                            {
+                                stats.tickets
+                                    .open
+                            }{" "}
+                            currently open
                         </span>
 
-                        <ArrowRight size={15} />
+                        <ArrowRight
+                            size={15}
+                        />
                     </div>
                 </article>
+
+                {/* IN PROGRESS */}
 
                 <article className="stat-card">
                     <div className="stat-card-top">
                         <div className="stat-icon">
-                            <Clock3 size={21} />
+                            <Clock3
+                                size={21}
+                            />
                         </div>
 
                         <span className="stat-label">
@@ -378,20 +564,28 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="stat-value">
-                        {stats.tickets.inProgress}
+                        {
+                            stats.tickets
+                                .inProgress
+                        }
                     </div>
 
                     <div className="stat-footer">
                         <span>
-                            Active IT support work
+                            Active IT support
+                            work
                         </span>
                     </div>
                 </article>
 
+                {/* RESOLVED */}
+
                 <article className="stat-card">
                     <div className="stat-card-top">
                         <div className="stat-icon">
-                            <CheckCircle2 size={21} />
+                            <CheckCircle2
+                                size={21}
+                            />
                         </div>
 
                         <span className="stat-label">
@@ -400,25 +594,34 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="stat-value">
-                        {stats.tickets.resolved}
+                        {
+                            stats.tickets
+                                .resolved
+                        }
                     </div>
 
                     <div className="stat-footer">
                         <span>
-                            Issues resolved successfully
+                            Issues resolved
+                            successfully
                         </span>
                     </div>
                 </article>
 
+                {/* SLA BREACHED */}
+
                 <article
-                    className={`stat-card ${stats.tickets.slaBreached > 0
+                    className={`stat-card ${stats.tickets
+                            .slaBreached > 0
                             ? "stat-card-danger"
                             : ""
                         }`}
                 >
                     <div className="stat-card-top">
                         <div className="stat-icon">
-                            <AlertTriangle size={21} />
+                            <AlertTriangle
+                                size={21}
+                            />
                         </div>
 
                         <span className="stat-label">
@@ -427,7 +630,10 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="stat-value">
-                        {stats.tickets.slaBreached}
+                        {
+                            stats.tickets
+                                .slaBreached
+                        }
                     </div>
 
                     <div className="stat-footer">
@@ -436,12 +642,19 @@ export default function DashboardPage() {
                         </span>
                     </div>
                 </article>
+
             </section>
 
-            {/* CHARTS */}
+            {/* =====================================================
+          CHARTS
+          ===================================================== */}
 
             <section className="dashboard-main-grid">
+
+                {/* TICKET OVERVIEW */}
+
                 <article className="dashboard-panel dashboard-chart-panel">
+
                     <div className="panel-header">
                         <div>
                             <h2>
@@ -449,8 +662,8 @@ export default function DashboardPage() {
                             </h2>
 
                             <p>
-                                Current support workload by
-                                status
+                                Current support
+                                workload by status
                             </p>
                         </div>
 
@@ -460,12 +673,15 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="chart-container">
+
                         <ResponsiveContainer
                             width="100%"
                             height={280}
                         >
                             <BarChart
-                                data={ticketChartData}
+                                data={
+                                    ticketChartData
+                                }
                                 barSize={32}
                             >
                                 <CartesianGrid
@@ -479,17 +695,21 @@ export default function DashboardPage() {
                                     axisLine={false}
                                     tickLine={false}
                                     tick={{
-                                        fill: "#898696",
+                                        fill:
+                                            "#898696",
                                         fontSize: 12,
                                     }}
                                 />
 
                                 <YAxis
-                                    allowDecimals={false}
+                                    allowDecimals={
+                                        false
+                                    }
                                     axisLine={false}
                                     tickLine={false}
                                     tick={{
-                                        fill: "#898696",
+                                        fill:
+                                            "#898696",
                                         fontSize: 12,
                                     }}
                                 />
@@ -500,25 +720,40 @@ export default function DashboardPage() {
                                             "rgba(124, 92, 255, 0.07)",
                                     }}
                                     contentStyle={{
-                                        background: "#17151c",
+                                        background:
+                                            "#17151c",
+
                                         border:
                                             "1px solid rgba(255,255,255,.1)",
-                                        borderRadius: "12px",
-                                        color: "#fff",
+
+                                        borderRadius:
+                                            "12px",
+
+                                        color:
+                                            "#fff",
                                     }}
                                 />
 
                                 <Bar
                                     dataKey="value"
                                     fill="#8b72ff"
-                                    radius={[8, 8, 2, 2]}
+                                    radius={[
+                                        8,
+                                        8,
+                                        2,
+                                        2,
+                                    ]}
                                 />
                             </BarChart>
                         </ResponsiveContainer>
+
                     </div>
                 </article>
 
+                {/* PRIORITY DISTRIBUTION */}
+
                 <article className="dashboard-panel">
+
                     <div className="panel-header">
                         <div>
                             <h2>
@@ -526,31 +761,48 @@ export default function DashboardPage() {
                             </h2>
 
                             <p>
-                                Current risk distribution
+                                Current risk
+                                distribution
                             </p>
                         </div>
                     </div>
 
                     <div className="priority-chart-layout">
+
                         <div className="pie-chart">
+
                             <ResponsiveContainer
                                 width="100%"
                                 height={220}
                             >
                                 <PieChart>
                                     <Pie
-                                        data={priorityChartData}
+                                        data={
+                                            priorityChartData
+                                        }
                                         dataKey="value"
                                         nameKey="name"
-                                        innerRadius={58}
-                                        outerRadius={85}
-                                        paddingAngle={4}
+                                        innerRadius={
+                                            58
+                                        }
+                                        outerRadius={
+                                            85
+                                        }
+                                        paddingAngle={
+                                            4
+                                        }
                                     >
                                         {priorityChartData.map(
-                                            (entry) => (
+                                            (
+                                                entry
+                                            ) => (
                                                 <Cell
-                                                    key={entry.name}
-                                                    fill={entry.color}
+                                                    key={
+                                                        entry.name
+                                                    }
+                                                    fill={
+                                                        entry.color
+                                                    }
                                                 />
                                             )
                                         )}
@@ -558,11 +810,17 @@ export default function DashboardPage() {
 
                                     <Tooltip
                                         contentStyle={{
-                                            background: "#17151c",
+                                            background:
+                                                "#17151c",
+
                                             border:
                                                 "1px solid rgba(255,255,255,.1)",
-                                            borderRadius: "12px",
-                                            color: "#fff",
+
+                                            borderRadius:
+                                                "12px",
+
+                                            color:
+                                                "#fff",
                                         }}
                                     />
                                 </PieChart>
@@ -570,7 +828,10 @@ export default function DashboardPage() {
 
                             <div className="pie-center">
                                 <strong>
-                                    {stats.tickets.total}
+                                    {
+                                        stats.tickets
+                                            .total
+                                    }
                                 </strong>
 
                                 <span>
@@ -580,11 +841,14 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="chart-legend">
+
                             {priorityChartData.map(
                                 (item) => (
                                     <div
                                         className="legend-item"
-                                        key={item.name}
+                                        key={
+                                            item.name
+                                        }
                                     >
                                         <div>
                                             <span
@@ -596,25 +860,38 @@ export default function DashboardPage() {
                                             />
 
                                             <span>
-                                                {item.name}
+                                                {
+                                                    item.name
+                                                }
                                             </span>
                                         </div>
 
                                         <strong>
-                                            {item.value}
+                                            {
+                                                item.value
+                                            }
                                         </strong>
                                     </div>
                                 )
                             )}
+
                         </div>
+
                     </div>
                 </article>
+
             </section>
 
-            {/* RECENT + ASSETS */}
+            {/* =====================================================
+          RECENT TICKETS + ASSETS
+          ===================================================== */}
 
             <section className="dashboard-bottom-grid">
+
+                {/* RECENT TICKETS */}
+
                 <article className="dashboard-panel recent-tickets-panel">
+
                     <div className="panel-header">
                         <div>
                             <h2>
@@ -622,7 +899,8 @@ export default function DashboardPage() {
                             </h2>
 
                             <p>
-                                Latest IT support requests
+                                Latest IT support
+                                requests
                             </p>
                         </div>
 
@@ -632,35 +910,62 @@ export default function DashboardPage() {
                         >
                             View all
 
-                            <ArrowRight size={15} />
+                            <ArrowRight
+                                size={15}
+                            />
                         </Link>
                     </div>
 
-                    {recentTickets.length === 0 ? (
+                    {recentTickets.length ===
+                        0 ? (
                         <div className="empty-state">
-                            <CircleDot size={30} />
+                            <CircleDot
+                                size={30}
+                            />
 
                             <p>
-                                No tickets available yet.
+                                No tickets
+                                available yet.
                             </p>
                         </div>
                     ) : (
                         <div className="tickets-table-wrapper">
+
                             <table className="dashboard-table">
                                 <thead>
                                     <tr>
-                                        <th>Ticket</th>
-                                        <th>Issue</th>
-                                        <th>Priority</th>
-                                        <th>Status</th>
-                                        <th>Assigned To</th>
+                                        <th>
+                                            Ticket
+                                        </th>
+
+                                        <th>
+                                            Issue
+                                        </th>
+
+                                        <th>
+                                            Priority
+                                        </th>
+
+                                        <th>
+                                            Status
+                                        </th>
+
+                                        <th>
+                                            Assigned To
+                                        </th>
                                     </tr>
                                 </thead>
 
                                 <tbody>
                                     {recentTickets.map(
-                                        (ticket) => (
-                                            <tr key={ticket.id}>
+                                        (
+                                            ticket
+                                        ) => (
+                                            <tr
+                                                key={
+                                                    ticket.id
+                                                }
+                                            >
                                                 <td>
                                                     <Link
                                                         to={`/tickets/${ticket.id}`}
@@ -675,12 +980,14 @@ export default function DashboardPage() {
                                                 <td>
                                                     <div className="ticket-title-cell">
                                                         <strong>
-                                                            {ticket.title}
+                                                            {
+                                                                ticket.title
+                                                            }
                                                         </strong>
 
                                                         <span>
                                                             {ticket.category
-                                                                ?.name ||
+                                                                ?.name ??
                                                                 "General"}
                                                         </span>
                                                     </div>
@@ -692,7 +999,9 @@ export default function DashboardPage() {
                                                             ticket.priority
                                                         )}
                                                     >
-                                                        {ticket.priority}
+                                                        {
+                                                            ticket.priority
+                                                        }
                                                     </span>
                                                 </td>
 
@@ -710,7 +1019,7 @@ export default function DashboardPage() {
 
                                                 <td>
                                                     {ticket.assignedTo
-                                                        ?.fullName ||
+                                                        ?.fullName ??
                                                         "Unassigned"}
                                                 </td>
                                             </tr>
@@ -718,11 +1027,16 @@ export default function DashboardPage() {
                                     )}
                                 </tbody>
                             </table>
+
                         </div>
                     )}
+
                 </article>
 
+                {/* ASSETS SUMMARY */}
+
                 <article className="dashboard-panel assets-summary-panel">
+
                     <div className="panel-header">
                         <div>
                             <h2>
@@ -730,31 +1044,50 @@ export default function DashboardPage() {
                             </h2>
 
                             <p>
-                                Infrastructure availability
+                                Infrastructure
+                                availability
                             </p>
                         </div>
 
-                        <Wrench size={19} />
+                        <Wrench
+                            size={19}
+                        />
                     </div>
 
                     <div className="assets-pie">
+
                         <ResponsiveContainer
                             width="100%"
                             height={205}
                         >
                             <PieChart>
                                 <Pie
-                                    data={assetChartData}
+                                    data={
+                                        assetChartData
+                                    }
                                     dataKey="value"
-                                    innerRadius={52}
-                                    outerRadius={76}
-                                    paddingAngle={5}
+                                    nameKey="name"
+                                    innerRadius={
+                                        52
+                                    }
+                                    outerRadius={
+                                        76
+                                    }
+                                    paddingAngle={
+                                        5
+                                    }
                                 >
                                     {assetChartData.map(
-                                        (entry) => (
+                                        (
+                                            entry
+                                        ) => (
                                             <Cell
-                                                key={entry.name}
-                                                fill={entry.color}
+                                                key={
+                                                    entry.name
+                                                }
+                                                fill={
+                                                    entry.color
+                                                }
                                             />
                                         )
                                     )}
@@ -762,11 +1095,17 @@ export default function DashboardPage() {
 
                                 <Tooltip
                                     contentStyle={{
-                                        background: "#17151c",
+                                        background:
+                                            "#17151c",
+
                                         border:
                                             "1px solid rgba(255,255,255,.1)",
-                                        borderRadius: "12px",
-                                        color: "#fff",
+
+                                        borderRadius:
+                                            "12px",
+
+                                        color:
+                                            "#fff",
                                     }}
                                 />
                             </PieChart>
@@ -774,21 +1113,28 @@ export default function DashboardPage() {
 
                         <div className="assets-pie-center">
                             <strong>
-                                {stats.assets.total}
+                                {
+                                    stats.assets
+                                        .total
+                                }
                             </strong>
 
                             <span>
                                 Assets
                             </span>
                         </div>
+
                     </div>
 
                     <div className="asset-summary-list">
+
                         {assetChartData.map(
                             (item) => (
                                 <div
                                     className="asset-summary-row"
-                                    key={item.name}
+                                    key={
+                                        item.name
+                                    }
                                 >
                                     <div>
                                         <span
@@ -798,15 +1144,20 @@ export default function DashboardPage() {
                                             }}
                                         />
 
-                                        {item.name}
+                                        {
+                                            item.name
+                                        }
                                     </div>
 
                                     <strong>
-                                        {item.value}
+                                        {
+                                            item.value
+                                        }
                                     </strong>
                                 </div>
                             )
                         )}
+
                     </div>
 
                     <Link
@@ -815,16 +1166,25 @@ export default function DashboardPage() {
                     >
                         Manage Assets
 
-                        <ArrowRight size={15} />
+                        <ArrowRight
+                            size={15}
+                        />
                     </Link>
+
                 </article>
+
             </section>
 
-            {/* BOTTOM MINI STATS */}
+            {/* =====================================================
+          MINI STATS
+          ===================================================== */}
 
             <section className="mini-stats-grid">
+
                 <article className="mini-stat">
-                    <Users size={20} />
+                    <Users
+                        size={20}
+                    />
 
                     <div>
                         <span>
@@ -832,13 +1192,18 @@ export default function DashboardPage() {
                         </span>
 
                         <strong>
-                            {stats.users.totalActive}
+                            {
+                                stats.users
+                                    .totalActive
+                            }
                         </strong>
                     </div>
                 </article>
 
                 <article className="mini-stat">
-                    <Laptop size={20} />
+                    <Laptop
+                        size={20}
+                    />
 
                     <div>
                         <span>
@@ -846,13 +1211,18 @@ export default function DashboardPage() {
                         </span>
 
                         <strong>
-                            {stats.assets.total}
+                            {
+                                stats.assets
+                                    .total
+                            }
                         </strong>
                     </div>
                 </article>
 
                 <article className="mini-stat">
-                    <Wrench size={20} />
+                    <Wrench
+                        size={20}
+                    />
 
                     <div>
                         <span>
@@ -869,7 +1239,9 @@ export default function DashboardPage() {
                 </article>
 
                 <article className="mini-stat">
-                    <AlertTriangle size={20} />
+                    <AlertTriangle
+                        size={20}
+                    />
 
                     <div>
                         <span>
@@ -884,7 +1256,9 @@ export default function DashboardPage() {
                         </strong>
                     </div>
                 </article>
+
             </section>
+
         </div>
     );
 }

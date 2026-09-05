@@ -1,152 +1,273 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+    useState,
+} from "react";
+
+import {
+    useNavigate,
+} from "react-router-dom";
+
 import api from "../api/client";
 
+type AssetStatus =
+    | "AVAILABLE"
+    | "IN_USE"
+    | "MAINTENANCE"
+    | "RETIRED";
+
 export default function CreateAssetPage() {
-    const navigate = useNavigate();
+    const navigate =
+        useNavigate();
 
-    const [assetTag, setAssetTag] = useState("");
-    const [type, setType] = useState("");
-    const [brand, setBrand] = useState("");
-    const [model, setModel] = useState("");
-    const [serialNumber, setSerialNumber] = useState("");
+    const [assetTag, setAssetTag] =
+        useState("");
 
-    const [status, setStatus] = useState("AVAILABLE");
+    const [type, setType] =
+        useState("");
 
-    const [purchaseDate, setPurchaseDate] = useState("");
-    const [warrantyExpiry, setWarrantyExpiry] = useState("");
+    const [brand, setBrand] =
+        useState("");
 
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [model, setModel] =
+        useState("");
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const [
+        serialNumber,
+        setSerialNumber,
+    ] =
+        useState("");
+
+    const [status, setStatus] =
+        useState<AssetStatus>(
+            "AVAILABLE"
+        );
+
+    const [
+        purchaseDate,
+        setPurchaseDate,
+    ] =
+        useState("");
+
+    const [
+        warrantyExpiry,
+        setWarrantyExpiry,
+    ] =
+        useState("");
+
+    const [saving, setSaving] =
+        useState(false);
+
+    const [error, setError] =
+        useState("");
+
+    const handleSubmit = async (
+        event: React.FormEvent
+    ) => {
+        event.preventDefault();
+
+        if (!assetTag.trim()) {
+            setError(
+                "Asset tag is required."
+            );
+
+            return;
+        }
+
+        if (!type.trim()) {
+            setError(
+                "Asset type is required."
+            );
+
+            return;
+        }
 
         try {
-            setLoading(true);
+            setSaving(true);
             setError("");
 
-            await api.post("/assets", {
-                assetTag: assetTag.trim(),
-                type: type.trim(),
+            await api.post(
+                "/assets",
+                {
+                    assetTag:
+                        assetTag.trim(),
 
-                ...(brand.trim() && {
-                    brand: brand.trim(),
-                }),
+                    type:
+                        type.trim(),
 
-                ...(model.trim() && {
-                    model: model.trim(),
-                }),
+                    ...(brand.trim()
+                        ? {
+                            brand:
+                                brand.trim(),
+                        }
+                        : {}),
 
-                ...(serialNumber.trim() && {
-                    serialNumber: serialNumber.trim(),
-                }),
+                    ...(model.trim()
+                        ? {
+                            model:
+                                model.trim(),
+                        }
+                        : {}),
 
-                status,
+                    ...(serialNumber.trim()
+                        ? {
+                            serialNumber:
+                                serialNumber.trim(),
+                        }
+                        : {}),
 
-                ...(purchaseDate && {
-                    purchaseDate,
-                }),
+                    status,
 
-                ...(warrantyExpiry && {
-                    warrantyExpiry,
-                }),
-            });
+                    ...(purchaseDate
+                        ? {
+                            purchaseDate,
+                        }
+                        : {}),
 
-            navigate("/assets");
+                    ...(warrantyExpiry
+                        ? {
+                            warrantyExpiry,
+                        }
+                        : {}),
+                }
+            );
+
+            navigate(
+                "/assets"
+            );
         } catch (error: any) {
             setError(
-                error.response?.data?.message ||
+                error.response?.data?.message ??
                 "Failed to create asset"
             );
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
 
     return (
         <div>
-            <h1>Add Asset</h1>
+            <h1>
+                Add Asset
+            </h1>
 
-            <p>Add a new IT asset to the system.</p>
+            <p>
+                Add a new IT asset
+                to WASL.
+            </p>
 
-            {error && <p>{error}</p>}
+            {error && (
+                <p>{error}</p>
+            )}
 
-            <form onSubmit={handleSubmit}>
+            <form
+                onSubmit={
+                    handleSubmit
+                }
+            >
                 <div>
-                    <label>Asset Tag</label>
+                    <label>
+                        Asset Tag
+                    </label>
 
                     <input
                         type="text"
                         value={assetTag}
-                        onChange={(e) =>
-                            setAssetTag(e.target.value)
-                        }
-                        placeholder="LAP-001"
+                        placeholder="LT-0001"
+                        disabled={saving}
                         required
+                        onChange={(event) =>
+                            setAssetTag(
+                                event.target.value
+                            )
+                        }
                     />
                 </div>
 
                 <div>
-                    <label>Type</label>
+                    <label>
+                        Type
+                    </label>
 
                     <input
                         type="text"
                         value={type}
-                        onChange={(e) =>
-                            setType(e.target.value)
-                        }
                         placeholder="Laptop"
+                        disabled={saving}
                         required
+                        onChange={(event) =>
+                            setType(
+                                event.target.value
+                            )
+                        }
                     />
                 </div>
 
                 <div>
-                    <label>Brand</label>
+                    <label>
+                        Brand
+                    </label>
 
                     <input
                         type="text"
                         value={brand}
-                        onChange={(e) =>
-                            setBrand(e.target.value)
-                        }
                         placeholder="Dell"
+                        disabled={saving}
+                        onChange={(event) =>
+                            setBrand(
+                                event.target.value
+                            )
+                        }
                     />
                 </div>
 
                 <div>
-                    <label>Model</label>
+                    <label>
+                        Model
+                    </label>
 
                     <input
                         type="text"
                         value={model}
-                        onChange={(e) =>
-                            setModel(e.target.value)
-                        }
                         placeholder="Latitude 5540"
+                        disabled={saving}
+                        onChange={(event) =>
+                            setModel(
+                                event.target.value
+                            )
+                        }
                     />
                 </div>
 
                 <div>
-                    <label>Serial Number</label>
+                    <label>
+                        Serial Number
+                    </label>
 
                     <input
                         type="text"
                         value={serialNumber}
-                        onChange={(e) =>
-                            setSerialNumber(e.target.value)
-                        }
                         placeholder="SN123456"
+                        disabled={saving}
+                        onChange={(event) =>
+                            setSerialNumber(
+                                event.target.value
+                            )
+                        }
                     />
                 </div>
 
                 <div>
-                    <label>Status</label>
+                    <label>
+                        Status
+                    </label>
 
                     <select
                         value={status}
-                        onChange={(e) =>
-                            setStatus(e.target.value)
+                        disabled={saving}
+                        onChange={(event) =>
+                            setStatus(
+                                event.target
+                                    .value as AssetStatus
+                            )
                         }
                     >
                         <option value="AVAILABLE">
@@ -168,41 +289,60 @@ export default function CreateAssetPage() {
                 </div>
 
                 <div>
-                    <label>Purchase Date</label>
+                    <label>
+                        Purchase Date
+                    </label>
 
                     <input
                         type="date"
                         value={purchaseDate}
-                        onChange={(e) =>
-                            setPurchaseDate(e.target.value)
+                        disabled={saving}
+                        onChange={(event) =>
+                            setPurchaseDate(
+                                event.target.value
+                            )
                         }
                     />
                 </div>
 
                 <div>
-                    <label>Warranty Expiry</label>
+                    <label>
+                        Warranty Expiry
+                    </label>
 
                     <input
                         type="date"
-                        value={warrantyExpiry}
-                        onChange={(e) =>
-                            setWarrantyExpiry(e.target.value)
+                        value={
+                            warrantyExpiry
+                        }
+                        disabled={saving}
+                        onChange={(event) =>
+                            setWarrantyExpiry(
+                                event.target.value
+                            )
                         }
                     />
                 </div>
 
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={
+                        saving ||
+                        !assetTag.trim() ||
+                        !type.trim()
+                    }
                 >
-                    {loading
+                    {saving
                         ? "Creating..."
                         : "Add Asset"}
                 </button>
 
                 <button
                     type="button"
-                    onClick={() => navigate("/assets")}
+                    disabled={saving}
+                    onClick={() =>
+                        navigate("/assets")
+                    }
                 >
                     Cancel
                 </button>

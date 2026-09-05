@@ -1,49 +1,110 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import api from "../api/client";
+import {
+    useCallback,
+    useEffect,
+    useState,
+} from "react";
 
-type User = {
+import {
+    Link,
+    useParams,
+} from "react-router-dom";
+
+import api from "../api/client";
+import useAuth from "../hooks/useAuth";
+
+type TicketStatus =
+    | "OPEN"
+    | "IN_PROGRESS"
+    | "RESOLVED"
+    | "CLOSED";
+
+interface User {
     id: number;
     fullName: string;
     email: string;
     role: string;
-};
+    isActive?: boolean;
+}
 
-type Comment = {
+interface Comment {
     id: number;
     message: string;
     isInternal: boolean;
     createdAt: string;
+
     user: {
         id: number;
         fullName: string;
         role: string;
     };
-};
+}
 
-type Ticket = {
+interface HistoryItem {
+    id: number;
+    action: string;
+
+    oldValue?: string | null;
+    newValue?: string | null;
+
+    createdAt: string;
+
+    user: {
+        id: number;
+        fullName: string;
+        role: string;
+    };
+}
+
+interface Attachment {
+    id: number;
+
+    originalName?: string;
+    fileName?: string;
+    filename?: string;
+    name?: string;
+
+    mimeType?: string;
+    size?: number;
+
+    createdAt?: string;
+
+    uploadedBy?: {
+        id: number;
+        fullName: string;
+    } | null;
+}
+
+interface Ticket {
     id: number;
     ticketNumber: string;
+
     title: string;
     description: string;
-    priority: string;
-    status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+
+    priority:
+    | "LOW"
+    | "MEDIUM"
+    | "HIGH"
+    | "CRITICAL";
+
+    status: TicketStatus;
 
     slaDueAt?: string | null;
     resolvedAt?: string | null;
     closedAt?: string | null;
+
     createdAt: string;
 
-    category: {
+    category?: {
         id: number;
         name: string;
-    };
+    } | null;
 
     createdBy?: {
         id: number;
         fullName: string;
         email: string;
-    };
+    } | null;
 
     assignedTo?: {
         id: number;
@@ -58,106 +119,241 @@ type Ticket = {
         brand?: string | null;
         model?: string | null;
     } | null;
-};
-
-
-type HistoryItem = {
-    id: number;
-    action: string;
-    oldValue?: string | null;
-    newValue?: string | null;
-    createdAt: string;
-    user: {
-        id: number;
-        fullName: string;
-        role: string;
-    };
-};
-
-
-
+}
 
 export default function TicketDetailsPage() {
-    const { id } = useParams();
+    const { id } =
+        useParams();
 
-    const currentUser = JSON.parse(
-        localStorage.getItem("user") || "{}"
-    );
+    const { user: currentUser } =
+        useAuth();
 
-    const [ticket, setTicket] = useState<Ticket | null>(null);
-    const [technicians, setTechnicians] = useState<User[]>([]);
-    const [comments, setComments] = useState<Comment[]>([]);
+    const ticketId =
+        Number(id);
 
-    const [selectedTechnician, setSelectedTechnician] =
+    const [ticket, setTicket] =
+        useState<Ticket | null>(null);
+
+    const [
+        technicians,
+        setTechnicians,
+    ] =
+        useState<User[]>([]);
+
+    const [
+        comments,
+        setComments,
+    ] =
+        useState<Comment[]>([]);
+
+    const [
+        history,
+        setHistory,
+    ] =
+        useState<HistoryItem[]>([]);
+
+    const [
+        attachments,
+        setAttachments,
+    ] =
+        useState<Attachment[]>([]);
+
+    const [
+        selectedTechnician,
+        setSelectedTechnician,
+    ] =
         useState("");
 
-    const [commentMessage, setCommentMessage] = useState("");
-    const [isInternal, setIsInternal] = useState(false);
+    const [
+        commentMessage,
+        setCommentMessage,
+    ] =
+        useState("");
 
-    const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState(false);
+    const [
+        isInternal,
+        setIsInternal,
+    ] =
+        useState(false);
 
-    const [error, setError] = useState("");
-    const [message, setMessage] = useState("");
+    const [
+        selectedFile,
+        setSelectedFile,
+    ] =
+        useState<File | null>(null);
 
-    const [history, setHistory] = useState<HistoryItem[]>([]);
+    const [loading, setLoading] =
+        useState(true);
 
-    const fetchTicket = async () => {
-        const response = await api.get("/tickets");
+    const [
+        actionLoading,
+        setActionLoading,
+    ] =
+        useState(false);
 
-        const tickets: Ticket[] =
-            response.data.data.tickets;
+    const [
+        uploadLoading,
+        setUploadLoading,
+    ] =
+        useState(false);
 
-        const foundTicket = tickets.find(
-            (item) => item.id === Number(id)
-        );
+    const [error, setError] =
+        useState("");
 
-        if (!foundTicket) {
-            throw new Error("Ticket not found");
-        }
+    const [message, setMessage] =
+        useState("");
 
-        setTicket(foundTicket);
-    };
+    const fetchTicket =
+        useCallback(async () => {
+            const response =
+                await api.get("/tickets");
 
-    const fetchTechnicians = async () => {
-        if (currentUser.role !== "ADMIN") {
-            return;
-        }
+            const data =
+                response.data?.data
+                    ?.tickets ??
+                response.data?.data ??
+                [];
 
-        const response = await api.get("/users");
+            const tickets: Ticket[] =
+                Array.isArray(data)
+                    ? data
+                    : [];
 
-        const users: User[] =
-            response.data.data.users;
+            const foundTicket =
+                tickets.find(
+                    (item) =>
+                        item.id === ticketId
+                );
 
-        setTechnicians(
-            users.filter(
-                (user) => user.role === "TECHNICIAN"
-            )
-        );
-    };
+            if (!foundTicket) {
+                throw new Error(
+                    "Ticket not found"
+                );
+            }
 
-    const fetchComments = async () => {
-        const response = await api.get(
-            `/tickets/${id}/comments`
-        );
+            setTicket(foundTicket);
 
-        setComments(
-            response.data.data.comments
-        );
-    };
+            if (
+                foundTicket.assignedTo
+                    ?.id
+            ) {
+                setSelectedTechnician(
+                    String(
+                        foundTicket
+                            .assignedTo.id
+                    )
+                );
+            }
+        }, [ticketId]);
 
-    const fetchHistory = async () => {
-        const response = await api.get(
-            `/tickets/${id}/history`
-        );
+    const fetchTechnicians =
+        useCallback(async () => {
+            if (
+                currentUser?.role !==
+                "ADMIN"
+            ) {
+                return;
+            }
 
-        setHistory(
-            response.data.data.history
-        );
-    };
+            const response =
+                await api.get("/users");
+
+            const data =
+                response.data?.data
+                    ?.users ??
+                response.data?.data ??
+                [];
+
+            const users: User[] =
+                Array.isArray(data)
+                    ? data
+                    : [];
+
+            setTechnicians(
+                users.filter(
+                    (user) =>
+                        user.role ===
+                        "TECHNICIAN" &&
+                        user.isActive !== false
+                )
+            );
+        }, [currentUser?.role]);
+
+    const fetchComments =
+        useCallback(async () => {
+            const response =
+                await api.get(
+                    `/tickets/${ticketId}/comments`
+                );
+
+            const data =
+                response.data?.data
+                    ?.comments ??
+                response.data?.data ??
+                [];
+
+            setComments(
+                Array.isArray(data)
+                    ? data
+                    : []
+            );
+        }, [ticketId]);
+
+    const fetchHistory =
+        useCallback(async () => {
+            const response =
+                await api.get(
+                    `/tickets/${ticketId}/history`
+                );
+
+            const data =
+                response.data?.data
+                    ?.history ??
+                response.data?.data ??
+                [];
+
+            setHistory(
+                Array.isArray(data)
+                    ? data
+                    : []
+            );
+        }, [ticketId]);
+
+    const fetchAttachments =
+        useCallback(async () => {
+            const response =
+                await api.get(
+                    `/attachments/tickets/${ticketId}`
+                );
+
+            const data =
+                response.data?.data
+                    ?.attachments ??
+                response.data?.data ??
+                [];
+
+            setAttachments(
+                Array.isArray(data)
+                    ? data
+                    : []
+            );
+        }, [ticketId]);
 
     useEffect(() => {
         const loadPage = async () => {
+            if (
+                !Number.isFinite(
+                    ticketId
+                )
+            ) {
+                setError(
+                    "Invalid ticket ID."
+                );
+
+                setLoading(false);
+                return;
+            }
+
             try {
                 setLoading(true);
                 setError("");
@@ -167,11 +363,13 @@ export default function TicketDetailsPage() {
                     fetchTechnicians(),
                     fetchComments(),
                     fetchHistory(),
+                    fetchAttachments(),
                 ]);
             } catch (error: any) {
                 setError(
-                    error.response?.data?.message ||
-                    error.message ||
+                    error.response?.data
+                        ?.message ??
+                    error.message ??
                     "Failed to load ticket"
                 );
             } finally {
@@ -179,236 +377,526 @@ export default function TicketDetailsPage() {
             }
         };
 
-        loadPage();
-    }, [id]);
+        void loadPage();
+    }, [
+        ticketId,
+        fetchTicket,
+        fetchTechnicians,
+        fetchComments,
+        fetchHistory,
+        fetchAttachments,
+    ]);
 
-    const handleAssign = async () => {
-        if (!selectedTechnician) {
-            setError("Please select a technician");
-            return;
-        }
+    const handleAssign =
+        async () => {
+            if (
+                !selectedTechnician
+            ) {
+                setError(
+                    "Please select a technician."
+                );
 
-        try {
-            setActionLoading(true);
-            setError("");
-            setMessage("");
+                return;
+            }
 
-            await api.patch(
-                `/tickets/${id}/assign`,
-                {
-                    technicianId:
-                        Number(selectedTechnician),
-                }
-            );
+            try {
+                setActionLoading(true);
+                setError("");
+                setMessage("");
 
-            setMessage(
-                "Technician assigned successfully"
-            );
+                await api.patch(
+                    `/tickets/${ticketId}/assign`,
+                    {
+                        technicianId:
+                            Number(
+                                selectedTechnician
+                            ),
+                    }
+                );
 
-            await fetchTicket();
-        } catch (error: any) {
-            setError(
-                error.response?.data?.message ||
-                "Failed to assign technician"
-            );
-        } finally {
-            setActionLoading(false);
-        }
-    };
+                setMessage(
+                    "Technician assigned successfully."
+                );
 
-    const handleStatusChange = async (
-        status: string
-    ) => {
-        try {
-            setActionLoading(true);
-            setError("");
-            setMessage("");
+                await Promise.all([
+                    fetchTicket(),
+                    fetchHistory(),
+                ]);
+            } catch (error: any) {
+                setError(
+                    error.response?.data
+                        ?.message ??
+                    "Failed to assign technician"
+                );
+            } finally {
+                setActionLoading(false);
+            }
+        };
 
-            await api.patch(
-                `/tickets/${id}/status`,
-                {
-                    status,
-                }
-            );
+    const handleStatusChange =
+        async (
+            status: TicketStatus
+        ) => {
+            try {
+                setActionLoading(true);
+                setError("");
+                setMessage("");
 
-            setMessage(
-                "Ticket status updated successfully"
-            );
+                await api.patch(
+                    `/tickets/${ticketId}/status`,
+                    {
+                        status,
+                    }
+                );
 
-            await fetchTicket();
-        } catch (error: any) {
-            setError(
-                error.response?.data?.message ||
-                "Failed to update ticket status"
-            );
-        } finally {
-            setActionLoading(false);
-        }
-    };
+                setMessage(
+                    "Ticket status updated successfully."
+                );
 
-    const handleAddComment = async (
-        e: React.FormEvent
-    ) => {
-        e.preventDefault();
+                await Promise.all([
+                    fetchTicket(),
+                    fetchHistory(),
+                ]);
+            } catch (error: any) {
+                setError(
+                    error.response?.data
+                        ?.message ??
+                    "Failed to update ticket status"
+                );
+            } finally {
+                setActionLoading(false);
+            }
+        };
 
-        if (!commentMessage.trim()) {
-            return;
-        }
+    const handleAddComment =
+        async (
+            event: React.FormEvent
+        ) => {
+            event.preventDefault();
 
-        try {
-            setActionLoading(true);
-            setError("");
-            setMessage("");
+            if (
+                !commentMessage.trim()
+            ) {
+                return;
+            }
 
-            await api.post(
-                `/tickets/${id}/comments`,
-                {
-                    message: commentMessage.trim(),
-                    isInternal,
-                }
-            );
+            try {
+                setActionLoading(true);
+                setError("");
+                setMessage("");
 
-            setCommentMessage("");
-            setIsInternal(false);
+                await api.post(
+                    `/tickets/${ticketId}/comments`,
+                    {
+                        message:
+                            commentMessage.trim(),
 
-            setMessage(
-                "Comment added successfully"
-            );
+                        isInternal,
+                    }
+                );
 
-            await fetchComments();
-        } catch (error: any) {
-            setError(
-                error.response?.data?.message ||
-                "Failed to add comment"
-            );
-        } finally {
-            setActionLoading(false);
-        }
-    };
+                setCommentMessage("");
+                setIsInternal(false);
+
+                setMessage(
+                    isInternal
+                        ? "Internal note added successfully."
+                        : "Comment added successfully."
+                );
+
+                await Promise.all([
+                    fetchComments(),
+                    fetchHistory(),
+                ]);
+            } catch (error: any) {
+                setError(
+                    error.response?.data
+                        ?.message ??
+                    "Failed to add comment"
+                );
+            } finally {
+                setActionLoading(false);
+            }
+        };
+
+    const handleUpload =
+        async () => {
+            if (!selectedFile) {
+                setError(
+                    "Please select a file."
+                );
+
+                return;
+            }
+
+            try {
+                setUploadLoading(true);
+                setError("");
+                setMessage("");
+
+                const formData =
+                    new FormData();
+
+                formData.append(
+                    "file",
+                    selectedFile
+                );
+
+                await api.post(
+                    `/attachments/tickets/${ticketId}`,
+                    formData
+                );
+
+                setSelectedFile(null);
+
+                setMessage(
+                    "Attachment uploaded successfully."
+                );
+
+                await fetchAttachments();
+            } catch (error: any) {
+                setError(
+                    error.response?.data
+                        ?.message ??
+                    "Failed to upload attachment"
+                );
+            } finally {
+                setUploadLoading(false);
+            }
+        };
+
+    const handleDownload =
+        async (
+            attachment: Attachment
+        ) => {
+            try {
+                setError("");
+
+                const response =
+                    await api.get(
+                        `/attachments/${attachment.id}`,
+                        {
+                            responseType:
+                                "blob",
+                        }
+                    );
+
+                const url =
+                    window.URL.createObjectURL(
+                        response.data
+                    );
+
+                const link =
+                    document.createElement(
+                        "a"
+                    );
+
+                link.href = url;
+
+                link.download =
+                    attachment.originalName ??
+                    attachment.fileName ??
+                    attachment.filename ??
+                    attachment.name ??
+                    `attachment-${attachment.id}`;
+
+                document.body.appendChild(
+                    link
+                );
+
+                link.click();
+
+                link.remove();
+
+                window.URL.revokeObjectURL(
+                    url
+                );
+            } catch (error: any) {
+                setError(
+                    error.response?.data
+                        ?.message ??
+                    "Failed to download attachment"
+                );
+            }
+        };
+
+    const handleDeleteAttachment =
+        async (
+            attachmentId: number
+        ) => {
+            try {
+                setActionLoading(true);
+                setError("");
+                setMessage("");
+
+                await api.delete(
+                    `/attachments/${attachmentId}`
+                );
+
+                setMessage(
+                    "Attachment deleted successfully."
+                );
+
+                await fetchAttachments();
+            } catch (error: any) {
+                setError(
+                    error.response?.data
+                        ?.message ??
+                    "Failed to delete attachment"
+                );
+            } finally {
+                setActionLoading(false);
+            }
+        };
 
     if (loading) {
-        return <p>Loading ticket...</p>;
+        return (
+            <p>
+                Loading ticket...
+            </p>
+        );
     }
 
     if (error && !ticket) {
-        return <p>{error}</p>;
+        return (
+            <div>
+                <p>{error}</p>
+
+                <Link to="/tickets">
+                    Back to Tickets
+                </Link>
+            </div>
+        );
     }
 
     if (!ticket) {
-        return <p>Ticket not found.</p>;
+        return (
+            <p>
+                Ticket not found.
+            </p>
+        );
     }
+
+    const canManageWorkflow =
+        currentUser?.role ===
+        "ADMIN" ||
+        currentUser?.role ===
+        "TECHNICIAN";
+
+    const canUseInternalNotes =
+        currentUser?.role ===
+        "ADMIN" ||
+        currentUser?.role ===
+        "TECHNICIAN";
+
+    const canCloseTicket =
+        currentUser?.role ===
+        "ADMIN" ||
+        currentUser?.id ===
+        ticket.createdBy?.id;
 
     return (
         <div>
             <div>
-                <h1>{ticket.ticketNumber}</h1>
-                <h2>{ticket.title}</h2>
-                <p>{ticket.description}</p>
-            </div>
+                <Link to="/tickets">
+                    ← Tickets
+                </Link>
 
-            {message && <p>{message}</p>}
-            {error && <p>{error}</p>}
+                <h1>
+                    {ticket.ticketNumber}
+                </h1>
 
-            <section>
-                <h3>Ticket Information</h3>
+                <h2>
+                    {ticket.title}
+                </h2>
 
                 <p>
-                    <strong>Status:</strong>{" "}
+                    {ticket.description}
+                </p>
+            </div>
+
+            {message && (
+                <p>{message}</p>
+            )}
+
+            {error && (
+                <p>{error}</p>
+            )}
+
+            <section>
+                <h3>
+                    Ticket Information
+                </h3>
+
+                <p>
+                    <strong>
+                        Status:
+                    </strong>{" "}
                     {ticket.status}
                 </p>
 
                 <p>
-                    <strong>Priority:</strong>{" "}
+                    <strong>
+                        Priority:
+                    </strong>{" "}
                     {ticket.priority}
                 </p>
 
                 <p>
-                    <strong>Category:</strong>{" "}
-                    {ticket.category?.name}
+                    <strong>
+                        Category:
+                    </strong>{" "}
+                    {ticket.category?.name ??
+                        "—"}
                 </p>
 
                 <p>
-                    <strong>Created By:</strong>{" "}
-                    {ticket.createdBy?.fullName || "-"}
+                    <strong>
+                        Created By:
+                    </strong>{" "}
+                    {ticket.createdBy
+                        ?.fullName ?? "—"}
                 </p>
 
                 <p>
-                    <strong>Assigned To:</strong>{" "}
-                    {ticket.assignedTo?.fullName ||
+                    <strong>
+                        Assigned To:
+                    </strong>{" "}
+                    {ticket.assignedTo
+                        ?.fullName ??
                         "Unassigned"}
                 </p>
 
                 <p>
-                    <strong>Asset:</strong>{" "}
+                    <strong>
+                        Asset:
+                    </strong>{" "}
                     {ticket.asset
                         ? `${ticket.asset.assetTag} - ${ticket.asset.type}`
                         : "No asset"}
                 </p>
 
                 <p>
-                    <strong>SLA Due:</strong>{" "}
+                    <strong>
+                        Created:
+                    </strong>{" "}
+                    {new Date(
+                        ticket.createdAt
+                    ).toLocaleString()}
+                </p>
+
+                <p>
+                    <strong>
+                        SLA Due:
+                    </strong>{" "}
                     {ticket.slaDueAt
                         ? new Date(
                             ticket.slaDueAt
                         ).toLocaleString()
-                        : "-"}
+                        : "—"}
                 </p>
+
+                {ticket.resolvedAt && (
+                    <p>
+                        <strong>
+                            Resolved:
+                        </strong>{" "}
+                        {new Date(
+                            ticket.resolvedAt
+                        ).toLocaleString()}
+                    </p>
+                )}
+
+                {ticket.closedAt && (
+                    <p>
+                        <strong>
+                            Closed:
+                        </strong>{" "}
+                        {new Date(
+                            ticket.closedAt
+                        ).toLocaleString()}
+                    </p>
+                )}
             </section>
 
-            {currentUser.role === "ADMIN" && (
-                <section>
-                    <h3>Assign Technician</h3>
+            {currentUser?.role ===
+                "ADMIN" && (
+                    <section>
+                        <h3>
+                            Assign Technician
+                        </h3>
 
-                    <select
-                        value={selectedTechnician}
-                        onChange={(e) =>
-                            setSelectedTechnician(
-                                e.target.value
-                            )
-                        }
-                    >
-                        <option value="">
-                            Select technician
-                        </option>
+                        <select
+                            value={
+                                selectedTechnician
+                            }
+                            disabled={
+                                actionLoading
+                            }
+                            onChange={(event) =>
+                                setSelectedTechnician(
+                                    event.target.value
+                                )
+                            }
+                        >
+                            <option value="">
+                                Select Technician
+                            </option>
 
-                        {technicians.map(
-                            (technician) => (
-                                <option
-                                    key={technician.id}
-                                    value={technician.id}
-                                >
-                                    {technician.fullName}
-                                </option>
-                            )
-                        )}
-                    </select>
+                            {technicians.map(
+                                (technician) => (
+                                    <option
+                                        key={
+                                            technician.id
+                                        }
+                                        value={
+                                            technician.id
+                                        }
+                                    >
+                                        {
+                                            technician.fullName
+                                        }{" "}
+                                        ({technician.email})
+                                    </option>
+                                )
+                            )}
+                        </select>
 
-                    <button
-                        onClick={handleAssign}
-                        disabled={
-                            actionLoading ||
-                            !selectedTechnician
-                        }
-                    >
-                        Assign
-                    </button>
-                </section>
-            )}
+                        <button
+                            type="button"
+                            onClick={() =>
+                                void handleAssign()
+                            }
+                            disabled={
+                                actionLoading ||
+                                !selectedTechnician
+                            }
+                        >
+                            {actionLoading
+                                ? "Assigning..."
+                                : "Assign"}
+                        </button>
+                    </section>
+                )}
 
             <section>
-                <h3>Ticket Actions</h3>
+                <h3>
+                    Ticket Actions
+                </h3>
 
-                {ticket.status === "OPEN" &&
-                    (currentUser.role === "ADMIN" ||
-                        currentUser.role ===
-                        "TECHNICIAN") && (
+                {ticket.status ===
+                    "OPEN" &&
+                    canManageWorkflow && (
                         <button
+                            type="button"
+                            disabled={
+                                actionLoading
+                            }
                             onClick={() =>
-                                handleStatusChange(
+                                void handleStatusChange(
                                     "IN_PROGRESS"
                                 )
                             }
-                            disabled={actionLoading}
                         >
                             Start Progress
                         </button>
@@ -416,164 +904,367 @@ export default function TicketDetailsPage() {
 
                 {ticket.status ===
                     "IN_PROGRESS" &&
-                    (currentUser.role === "ADMIN" ||
-                        currentUser.role ===
-                        "TECHNICIAN") && (
+                    canManageWorkflow && (
                         <button
+                            type="button"
+                            disabled={
+                                actionLoading
+                            }
                             onClick={() =>
-                                handleStatusChange(
+                                void handleStatusChange(
                                     "RESOLVED"
                                 )
                             }
-                            disabled={actionLoading}
                         >
                             Resolve Ticket
                         </button>
                     )}
 
-                {ticket.status === "RESOLVED" &&
-                    (currentUser.role === "ADMIN" ||
-                        currentUser.id ===
-                        ticket.createdBy?.id) && (
+                {ticket.status ===
+                    "RESOLVED" &&
+                    canCloseTicket && (
                         <button
+                            type="button"
+                            disabled={
+                                actionLoading
+                            }
                             onClick={() =>
-                                handleStatusChange(
+                                void handleStatusChange(
                                     "CLOSED"
                                 )
                             }
-                            disabled={actionLoading}
                         >
                             Close Ticket
                         </button>
                     )}
 
-                {ticket.status === "CLOSED" && (
-                    <p>This ticket is closed.</p>
+                {ticket.status ===
+                    "CLOSED" && (
+                        <p>
+                            This ticket is closed.
+                        </p>
+                    )}
+            </section>
+
+            <section>
+                <h3>
+                    Attachments
+                </h3>
+
+                <div>
+                    <input
+                        type="file"
+                        disabled={
+                            uploadLoading
+                        }
+                        onChange={(event) =>
+                            setSelectedFile(
+                                event.target
+                                    .files?.[0] ??
+                                null
+                            )
+                        }
+                    />
+
+                    <button
+                        type="button"
+                        disabled={
+                            uploadLoading ||
+                            !selectedFile
+                        }
+                        onClick={() =>
+                            void handleUpload()
+                        }
+                    >
+                        {uploadLoading
+                            ? "Uploading..."
+                            : "Upload File"}
+                    </button>
+                </div>
+
+                {attachments.length ===
+                    0 ? (
+                    <p>
+                        No attachments.
+                    </p>
+                ) : (
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Type</th>
+                                <th>Size</th>
+                                <th>Uploaded</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {attachments.map(
+                                (attachment) => (
+                                    <tr
+                                        key={
+                                            attachment.id
+                                        }
+                                    >
+                                        <td>
+                                            {attachment.originalName ??
+                                                attachment.fileName ??
+                                                attachment.filename ??
+                                                attachment.name ??
+                                                `Attachment ${attachment.id}`}
+                                        </td>
+
+                                        <td>
+                                            {attachment.mimeType ??
+                                                "—"}
+                                        </td>
+
+                                        <td>
+                                            {attachment.size
+                                                ? `${Math.round(
+                                                    attachment.size /
+                                                    1024
+                                                )} KB`
+                                                : "—"}
+                                        </td>
+
+                                        <td>
+                                            {attachment.createdAt
+                                                ? new Date(
+                                                    attachment.createdAt
+                                                ).toLocaleString()
+                                                : "—"}
+                                        </td>
+
+                                        <td>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    void handleDownload(
+                                                        attachment
+                                                    )
+                                                }
+                                            >
+                                                Download
+                                            </button>
+
+                                            {(currentUser?.role ===
+                                                "ADMIN" ||
+                                                currentUser?.role ===
+                                                "TECHNICIAN") && (
+                                                    <button
+                                                        type="button"
+                                                        disabled={
+                                                            actionLoading
+                                                        }
+                                                        onClick={() =>
+                                                            void handleDeleteAttachment(
+                                                                attachment.id
+                                                            )
+                                                        }
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                )}
+                                        </td>
+                                    </tr>
+                                )
+                            )}
+                        </tbody>
+                    </table>
                 )}
             </section>
 
             <section>
-                <h3>Comments</h3>
+                <h3>
+                    Comments
+                </h3>
 
                 {comments.length === 0 ? (
-                    <p>No comments yet.</p>
+                    <p>
+                        No comments yet.
+                    </p>
                 ) : (
                     <div>
-                        {comments.map((comment) => (
-                            <div key={comment.id}>
-                                <strong>
-                                    {comment.user.fullName}
-                                </strong>
-
-                                <span>
-                                    {" "}
-                                    ({comment.user.role})
-                                </span>
-
-                                {comment.isInternal && (
+                        {comments.map(
+                            (comment) => (
+                                <div
+                                    key={
+                                        comment.id
+                                    }
+                                >
                                     <strong>
-                                        {" "}
-                                        [Internal Note]
+                                        {
+                                            comment.user
+                                                .fullName
+                                        }
                                     </strong>
-                                )}
 
-                                <p>{comment.message}</p>
+                                    <span>
+                                        {" "}
+                                        (
+                                        {
+                                            comment.user
+                                                .role
+                                        }
+                                        )
+                                    </span>
 
-                                <small>
-                                    {new Date(
-                                        comment.createdAt
-                                    ).toLocaleString()}
-                                </small>
+                                    {comment.isInternal && (
+                                        <strong>
+                                            {" "}
+                                            [Internal Note]
+                                        </strong>
+                                    )}
 
-                                <hr />
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </section>
-
-            <section>
-                <h3>Ticket History</h3>
-
-                {history.length === 0 ? (
-                    <p>No history yet.</p>
-                ) : (
-                    <div>
-                        {history.map((item) => (
-                            <div key={item.id}>
-                                <strong>{item.action}</strong>
-
-                                <p>
-                                    By: {item.user.fullName} ({item.user.role})
-                                </p>
-
-                                {item.oldValue && (
                                     <p>
-                                        From: {item.oldValue}
+                                        {
+                                            comment.message
+                                        }
                                     </p>
-                                )}
 
-                                {item.newValue && (
-                                    <p>
-                                        To: {item.newValue}
-                                    </p>
-                                )}
+                                    <small>
+                                        {new Date(
+                                            comment.createdAt
+                                        ).toLocaleString()}
+                                    </small>
 
-                                <small>
-                                    {new Date(
-                                        item.createdAt
-                                    ).toLocaleString()}
-                                </small>
-
-                                <hr />
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </section>
-
-            <section>
-                <h3>Add Comment</h3>
-
-                <form onSubmit={handleAddComment}>
-                    <textarea
-                        value={commentMessage}
-                        onChange={(e) =>
-                            setCommentMessage(
-                                e.target.value
+                                    <hr />
+                                </div>
                             )
+                        )}
+                    </div>
+                )}
+            </section>
+
+            <section>
+                <h3>
+                    Add Comment
+                </h3>
+
+                <form
+                    onSubmit={
+                        handleAddComment
+                    }
+                >
+                    <textarea
+                        value={
+                            commentMessage
+                        }
+                        disabled={
+                            actionLoading
                         }
                         placeholder="Write a comment..."
                         required
+                        onChange={(event) =>
+                            setCommentMessage(
+                                event.target.value
+                            )
+                        }
                     />
 
-                    {(currentUser.role === "ADMIN" ||
-                        currentUser.role ===
-                        "TECHNICIAN") && (
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={isInternal}
-                                    onChange={(e) =>
-                                        setIsInternal(
-                                            e.target.checked
-                                        )
-                                    }
-                                />
+                    {canUseInternalNotes && (
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={
+                                    isInternal
+                                }
+                                disabled={
+                                    actionLoading
+                                }
+                                onChange={(event) =>
+                                    setIsInternal(
+                                        event.target.checked
+                                    )
+                                }
+                            />
 
-                                Internal Note
-                            </label>
-                        )}
+                            Internal Note
+                        </label>
+                    )}
 
                     <button
                         type="submit"
-                        disabled={actionLoading}
+                        disabled={
+                            actionLoading ||
+                            !commentMessage.trim()
+                        }
                     >
                         {actionLoading
                             ? "Saving..."
-                            : "Add Comment"}
+                            : isInternal
+                                ? "Add Internal Note"
+                                : "Add Comment"}
                     </button>
                 </form>
+            </section>
+
+            <section>
+                <h3>
+                    Ticket History
+                </h3>
+
+                {history.length === 0 ? (
+                    <p>
+                        No history yet.
+                    </p>
+                ) : (
+                    <div>
+                        {history.map(
+                            (item) => (
+                                <div
+                                    key={item.id}
+                                >
+                                    <strong>
+                                        {item.action}
+                                    </strong>
+
+                                    <p>
+                                        By:{" "}
+                                        {
+                                            item.user
+                                                .fullName
+                                        }{" "}
+                                        (
+                                        {
+                                            item.user
+                                                .role
+                                        }
+                                        )
+                                    </p>
+
+                                    {item.oldValue && (
+                                        <p>
+                                            From:{" "}
+                                            {
+                                                item.oldValue
+                                            }
+                                        </p>
+                                    )}
+
+                                    {item.newValue && (
+                                        <p>
+                                            To:{" "}
+                                            {
+                                                item.newValue
+                                            }
+                                        </p>
+                                    )}
+
+                                    <small>
+                                        {new Date(
+                                            item.createdAt
+                                        ).toLocaleString()}
+                                    </small>
+
+                                    <hr />
+                                </div>
+                            )
+                        )}
+                    </div>
+                )}
             </section>
         </div>
     );

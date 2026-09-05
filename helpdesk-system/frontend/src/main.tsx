@@ -1,5 +1,8 @@
 import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import ReactDOM from "react-dom/client";
+
+import { AuthProvider } from "./context/AuthContext";
+import App from "./App";
 
 import "./styles/tokens.css";
 import "./styles/globals.css";
@@ -11,12 +14,12 @@ import "./styles/tables.css";
 import "./styles/dashboard.css";
 import "./styles/login.css";
 
-import App from "./App";
-
-createRoot(
+ReactDOM.createRoot(
   document.getElementById("root")!
 ).render(
   <StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </StrictMode>
 );
